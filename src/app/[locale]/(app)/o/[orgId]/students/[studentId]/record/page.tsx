@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { BackLink } from "@/features/workspace/components/display";
+import { InitialAvatar } from "@/components/layout/avatar";
+import { PageHeader } from "@/components/layout/page-header";
 import { RecordLessonForm } from "@/features/workspace/components/record-lesson-form";
 import {
   getLessons,
@@ -39,11 +40,14 @@ export default async function RecordLessonPage({
   const studentHref = `/o/${orgId}/students/${studentId}`;
 
   return (
-    <>
-      <div className="flex flex-col gap-1">
-        <BackLink href={studentHref} label={student.display_name} />
-        <h1 className="text-2xl font-bold">{t("title", { name: student.display_name })}</h1>
-      </div>
+    // Forms read best at a moderate width, even on large screens.
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <PageHeader
+        back={{ href: studentHref, label: student.display_name }}
+        leading={<InitialAvatar name={student.display_name} />}
+        title={t("title", { name: student.display_name })}
+        description={t("subtitle")}
+      />
       {/* A new key after each saved lesson guarantees a fresh form (and idempotency key). */}
       <RecordLessonForm
         key={lastLesson?.id ?? "first"}
@@ -53,6 +57,6 @@ export default async function RecordLessonPage({
         defaultSource={defaultSource}
         assignmentId={assignment?.id ?? null}
       />
-    </>
+    </div>
   );
 }

@@ -7,7 +7,18 @@
     "title": "منصة تحفيظ القرآن",
     "subtitle": "سجّل حفظ طلابك ومراجعتهم في ثوانٍ، وتابع أولياء الأمور تقدّم أبنائهم.",
     "getStarted": "ابدأ الآن",
-    "login": "تسجيل الدخول"
+    "login": "تسجيل الدخول",
+    "badge": "مجاني خلال المرحلة التجريبية",
+    "headline": "سجّل حفظ القرآن في ثوانٍ",
+    "featuresLabel": "ما تقدّمه المنصة",
+    "feature_fast": "تسجيل الدرس في ثوانٍ",
+    "feature_fast_desc": "السورة والتقييم والمقطع التالي جاهزة أمامك.",
+    "feature_parents": "أولياء الأمور يتابعون",
+    "feature_parents_desc": "دعوة عبر واتساب أو رمز QR، ويرى كلٌّ ابنه فقط.",
+    "feature_offline": "يعمل مع الإنترنت الضعيف",
+    "feature_offline_desc": "تبقى بياناتك على الهاتف وتُحفظ لاحقًا.",
+    "feature_private": "الخصوصية أولًا",
+    "feature_private_desc": "بيانات كل حلقة منفصلة، ولا إعلانات أبدًا."
   },
   "LanguageSwitcher": {
     "label": "اللغة",
@@ -73,7 +84,9 @@
     "yourChildren": "أبناؤك",
     "role_admin": "مشرف",
     "role_teacher": "معلم",
-    "createAnother": "إنشاء جهة أخرى"
+    "createAnother": "إنشاء جهة أخرى",
+    "greeting": "أهلًا، {name}",
+    "subtitle": "اختر أين تتابع."
   },
   "Onboarding": {
     "title": "إعداد حلقتك",
@@ -88,7 +101,8 @@
     "type_independent": "معلم مستقل",
     "type_other": "أخرى",
     "alsoTeacher": "أنا أيضًا أدرّس الطلاب هنا",
-    "create": "إنشاء"
+    "create": "إنشاء",
+    "alsoTeacherHint": "يمكنك تسجيل الدروس بنفسك إلى جانب إدارة الحلقة."
   },
   "Org": {
     "classes": "الحلقات",
@@ -102,14 +116,23 @@
     "inviteTeacher": "دعوة معلم",
     "data": "البيانات",
     "exportLessons": "تنزيل كل الدروس (CSV)",
-    "exportHelp": "جدول بكل دروس هذه الجهة، بما فيها ملاحظات المعلمين. احفظه في مكان خاص."
+    "exportHelp": "جدول بكل دروس هذه الجهة، بما فيها ملاحظات المعلمين. احفظه في مكان خاص.",
+    "summary": "{classes, plural, =0 {لا حلقات} one {حلقة واحدة} two {حلقتان} few {# حلقات} many {# حلقة} other {# حلقة}} · {students, plural, =0 {لا طلاب} one {طالب واحد} two {طالبان} few {# طلاب} many {# طالبًا} other {# طالب}}",
+    "noClassesHint": "أنشئ حلقتك الأولى من الأسفل، ثم أضف إليها الطلاب.",
+    "noClassesTeacherHint": "سيضيفك المشرف إلى حلقة.",
+    "youTeach": "تدرّسها",
+    "classAdded": "تمت إضافة الحلقة",
+    "teachersHint": "ادعُ معلمين آخرين برابط يُستخدم مرة واحدة."
   },
   "Class": {
     "roster": "الطلاب",
     "noStudents": "لا يوجد طلاب في هذه الحلقة بعد.",
     "addStudent": "إضافة طالب",
     "studentName": "اسم الطالب",
-    "add": "إضافة"
+    "add": "إضافة",
+    "noStudentsHint": "أضف طالبك الأول من النموذج.",
+    "studentAdded": "تمت إضافة الطالب",
+    "nameHint": "يكفي الاسم الأول أو اسم مختصر."
   },
   "Student": {
     "recordLesson": "تسجيل درس",
@@ -134,7 +157,14 @@
     "parent_pending": "قيد الانتظار",
     "parent_verified": "مرتبط",
     "parent_revoked": "أُزيل",
-    "markDone": "تم"
+    "markDone": "تم",
+    "noLessonsHint": "ستظهر الدروس التي تسجّلها هنا، الأحدث أولًا.",
+    "noAssignmentsHint": "تُنشأ المهام عند تسجيل درس.",
+    "mistakes": "الأخطاء",
+    "currentMemorization": "يحفظ الآن",
+    "lastLesson": "آخر درس",
+    "lessonsCount": "الدروس المسجّلة",
+    "none": "—"
   },
   "Lesson": {
     "title": "تسجيل درس — {name}",
@@ -170,7 +200,10 @@
     "fromPage": "من صفحة",
     "toPage": "إلى صفحة",
     "fromJuz": "من جزء",
-    "toJuz": "إلى جزء"
+    "toJuz": "إلى جزء",
+    "subtitle": "السورة والتقييم والخطوات التالية — نحو ٣٠ ثانية.",
+    "notes": "الملاحظات",
+    "nextSteps": "الخطوات التالية"
   },
   "Rating": {
     "excellent": "ممتاز",
@@ -207,7 +240,9 @@
     "progress": "التقدّم",
     "recentLessons": "آخر الدروس",
     "nextUp": "القادم",
-    "teacherFeedback": "ملاحظات المعلم"
+    "teacherFeedback": "ملاحظات المعلم",
+    "subtitle": "متابعة حفظ ابنك للقرآن",
+    "nowMemorizing": "يحفظ الآن"
   },
   "Footer": {
     "label": "روابط الموقع",

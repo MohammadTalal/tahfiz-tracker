@@ -1,15 +1,32 @@
 "use client";
 
-import { Loader2, WifiOff } from "lucide-react";
+import {
+  BookMarked,
+  BookOpen,
+  Check,
+  CircleAlert,
+  History,
+  ListTodo,
+  Loader2,
+  MessageSquareText,
+  Repeat2,
+  Save,
+  Star,
+  WifiOff,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { TextAreaField, TextField } from "@/components/forms/field";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { suggestNext, type Passage } from "@/lib/quran/passage";
+import { cn } from "@/lib/utils";
 import { recordLesson } from "../actions";
 import { MISTAKES, RATINGS, recordLessonSchema, type RecordLessonInput } from "../schemas";
 import { type PassageDraft, PassageFields } from "./passage-fields";
+import { RATING_STYLE } from "./rating-style";
 
 type Rating = (typeof RATINGS)[number];
 type Mistake = (typeof MISTAKES)[number];
@@ -142,6 +159,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
   const tr = useTranslations("Rating");
   const tm = useTranslations("Mistake");
   const te = useTranslations("Errors");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const draftKey = draftKeyFor(studentId);
 
@@ -212,6 +230,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
         });
         setRestored(false);
         setStatus("idle");
+        toast.success(t("saved"));
         router.push(studentHref);
         return;
       }
@@ -224,7 +243,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
     } finally {
       saving.current = false;
     }
-  }, [assignmentId, defaultPassage, draftKey, router, state, studentHref, studentId]);
+  }, [assignmentId, defaultPassage, draftKey, router, state, studentHref, studentId, t]);
 
   useEffect(() => {
     if (status !== "offline") return;
@@ -247,7 +266,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
   return (
     <form
       noValidate
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
         void submit();
@@ -256,19 +275,21 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
       {restored && (
         <div
           role="status"
-          className="bg-muted flex flex-wrap items-center justify-between gap-2 rounded-md p-3 text-sm"
+          className="bg-info-soft text-info flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 text-sm"
         >
-          <span>{t("draftRestored")}</span>
+          <span className="flex items-center gap-2">
+            <History className="size-4" aria-hidden />
+            {t("draftRestored")}
+          </span>
           <Button type="button" variant="ghost" size="sm" onClick={discardDraft}>
             {t("discardDraft")}
           </Button>
         </div>
       )}
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-semibold">{t("passage")}</h2>
+      <FormCard icon={BookOpen} title={t("passage")}>
         {defaultSource && !restored && (
-          <p className="text-muted-foreground text-sm">
+          <p className="bg-surface-tint text-muted-foreground -mt-1 rounded-lg px-3 py-2 text-sm">
             {defaultSource === "assignment" ? t("fromAssignment") : t("suggested")}
           </p>
         )}
@@ -277,152 +298,219 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
           onChange={setPassage}
           errors={passageErrors(errors, "passage")}
         />
-      </section>
+        <TextField
+          label={t("date")}
+          type="date"
+          value={state.lessonDate}
+          onChange={(e) => update({ lessonDate: e.target.value })}
+          error={errors.lessonDate}
+          dir="ltr"
+          className="w-44"
+        />
+      </FormCard>
 
-      <fieldset
-        className="flex flex-col gap-2"
-        aria-describedby={errors.rating ? `${ratingGroup}-error` : undefined}
-      >
-        <legend className="mb-2 font-semibold">{t("rating")}</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {RATINGS.map((rating) => (
-            <label
-              key={rating}
-              className="has-checked:border-primary has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-ring flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-3 text-center text-sm font-medium has-focus-visible:ring-2"
-            >
-              <input
-                type="radio"
-                name={ratingGroup}
-                value={rating}
-                checked={state.rating === rating}
-                onChange={() => update({ rating })}
-                className="sr-only"
-              />
-              {tr(rating)}
-            </label>
-          ))}
-        </div>
-        {errors.rating && (
-          <p id={`${ratingGroup}-error`} role="alert" className="text-destructive text-sm">
-            {te(errors.rating)}
-          </p>
-        )}
-      </fieldset>
+      <FormCard icon={Star} title={t("rating")}>
+        <fieldset aria-describedby={errors.rating ? `${ratingGroup}-error` : undefined}>
+          <legend className="sr-only">{t("rating")}</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {RATINGS.map((rating) => {
+              const { icon: Icon, selected } = RATING_STYLE[rating];
+              return (
+                <label
+                  key={rating}
+                  className={cn(
+                    "has-focus-visible:ring-ring hover:bg-surface-tint flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-2 py-2 text-center text-sm font-medium transition-colors duration-150 has-focus-visible:ring-2",
+                    selected,
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={ratingGroup}
+                    value={rating}
+                    checked={state.rating === rating}
+                    onChange={() => update({ rating })}
+                    className="sr-only"
+                  />
+                  <Icon className="size-4.5" aria-hidden />
+                  {tr(rating)}
+                </label>
+              );
+            })}
+          </div>
+          {errors.rating && (
+            <p id={`${ratingGroup}-error`} role="alert" className="text-destructive mt-2 text-sm">
+              {te(errors.rating)}
+            </p>
+          )}
+        </fieldset>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-semibold">{t("mistakes")}</legend>
-        <div className="flex flex-wrap gap-2">
-          {MISTAKES.map((mistake) => (
-            <label
-              key={mistake}
-              className="has-checked:border-primary has-checked:bg-primary/10 has-focus-visible:ring-ring flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-sm has-focus-visible:ring-2"
-            >
-              <input
-                type="checkbox"
-                checked={state.mistakes.includes(mistake)}
-                onChange={(e) =>
-                  update({
-                    mistakes: e.target.checked
-                      ? [...state.mistakes, mistake]
-                      : state.mistakes.filter((m) => m !== mistake),
-                  })
-                }
-                className="sr-only"
-              />
-              {tm(mistake)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-muted-foreground mb-2 text-sm font-medium">
+            {t("mistakes")} <span className="text-subtle-foreground font-normal">({tc("optional")})</span>
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {MISTAKES.map((mistake) => (
+              <label
+                key={mistake}
+                className="has-checked:border-warning has-checked:bg-warning-soft has-checked:text-warning has-focus-visible:ring-ring hover:bg-surface-tint flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm transition-colors duration-150 has-focus-visible:ring-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={state.mistakes.includes(mistake)}
+                  onChange={(e) =>
+                    update({
+                      mistakes: e.target.checked
+                        ? [...state.mistakes, mistake]
+                        : state.mistakes.filter((m) => m !== mistake),
+                    })
+                  }
+                  className="peer sr-only"
+                />
+                <Check className="hidden size-3.5 peer-checked:block" aria-hidden />
+                {tm(mistake)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </FormCard>
 
-      <TextAreaField
-        label={t("parentFeedback")}
-        help={t("parentFeedbackHelp")}
-        value={state.parentFeedback}
-        onChange={(e) => update({ parentFeedback: e.target.value })}
-        maxLength={2000}
-        rows={2}
-        error={errors.parentFeedback}
-      />
-      <TextAreaField
-        label={t("privateNote")}
-        help={t("privateNoteHelp")}
-        value={state.privateNote}
-        onChange={(e) => update({ privateNote: e.target.value })}
-        maxLength={5000}
-        rows={2}
-        error={errors.privateNote}
-      />
-
-      <section className="flex flex-col gap-3 rounded-lg border p-3">
-        <label className="flex items-center gap-2 font-semibold">
-          <input
-            type="checkbox"
-            checked={state.assignNext}
-            onChange={(e) => update({ assignNext: e.target.checked })}
-            className="accent-primary size-4"
+      <FormCard icon={MessageSquareText} title={t("notes")}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextAreaField
+            label={t("parentFeedback")}
+            help={t("parentFeedbackHelp")}
+            value={state.parentFeedback}
+            onChange={(e) => update({ parentFeedback: e.target.value })}
+            maxLength={2000}
+            rows={3}
+            error={errors.parentFeedback}
           />
-          {t("nextMemorization")}
-        </label>
-        {state.assignNext && (
+          <TextAreaField
+            label={t("privateNote")}
+            help={t("privateNoteHelp")}
+            value={state.privateNote}
+            onChange={(e) => update({ privateNote: e.target.value })}
+            maxLength={5000}
+            rows={3}
+            error={errors.privateNote}
+          />
+        </div>
+      </FormCard>
+
+      <FormCard icon={ListTodo} title={t("nextSteps")}>
+        <ToggleBlock
+          label={t("nextMemorization")}
+          icon={BookMarked}
+          checked={state.assignNext}
+          onChange={(assignNext) => update({ assignNext })}
+        >
           <PassageFields
             value={state.nextMemorization}
             onChange={(nextMemorization) => update({ nextMemorization, nextTouched: true })}
             errors={passageErrors(errors, "nextMemorization")}
           />
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3 rounded-lg border p-3">
-        <label className="flex items-center gap-2 font-semibold">
-          <input
-            type="checkbox"
-            checked={state.assignRevision}
-            onChange={(e) => update({ assignRevision: e.target.checked })}
-            className="accent-primary size-4"
-          />
-          {t("nextRevision")}
-        </label>
-        {state.assignRevision && (
+        </ToggleBlock>
+        <ToggleBlock
+          label={t("nextRevision")}
+          icon={Repeat2}
+          checked={state.assignRevision}
+          onChange={(assignRevision) => update({ assignRevision })}
+        >
           <PassageFields
             value={state.nextRevision}
             onChange={(nextRevision) => update({ nextRevision })}
             errors={passageErrors(errors, "nextRevision")}
           />
-        )}
-      </section>
-
-      <TextField
-        label={t("date")}
-        type="date"
-        value={state.lessonDate}
-        onChange={(e) => update({ lessonDate: e.target.value })}
-        error={errors.lessonDate}
-        dir="ltr"
-        className="w-44"
-      />
+        </ToggleBlock>
+      </FormCard>
 
       {status === "offline" && (
         <p
           role="alert"
-          className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md p-3 text-sm"
+          className="bg-warning-soft text-warning flex items-start gap-2 rounded-xl p-3 text-sm"
         >
           <WifiOff className="mt-0.5 size-4 shrink-0" aria-hidden />
           {te("network")}
         </p>
       )}
       {status === "error" && formError && (
-        <p role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+        <p
+          role="alert"
+          className="bg-destructive-soft text-destructive flex items-start gap-2 rounded-xl p-3 text-sm"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
           {te(formError)}
         </p>
       )}
 
-      <div className="bg-background/95 sticky bottom-0 -mx-4 border-t px-4 py-3 backdrop-blur">
-        <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={status === "saving"}>
-          {status === "saving" && <Loader2 className="size-4 animate-spin" aria-hidden />}
-          {t("save")}
-        </Button>
+      <div className="bg-background/95 sticky bottom-0 z-10 -mx-4 border-t px-4 py-3 sm:-mx-6 sm:px-6">
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 w-full text-base sm:w-64"
+            disabled={status === "saving"}
+          >
+            {status === "saving" ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Save className="size-4" aria-hidden />
+            )}
+            {t("save")}
+          </Button>
+        </div>
       </div>
     </form>
+  );
+}
+
+/** A titled white block grouping one part of the form. */
+function FormCard({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+  return (
+    <section className="bg-card flex flex-col gap-4 rounded-xl border p-4 shadow-(--shadow-soft) sm:p-5">
+      <h2 className="flex items-center gap-2 font-semibold">
+        <span className="bg-mint text-primary grid size-7 place-items-center rounded-md" aria-hidden>
+          <Icon className="size-4" />
+        </span>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+/** A checkbox that reveals its fields when ticked (next memorization, revision). */
+function ToggleBlock({
+  label,
+  icon: Icon,
+  checked,
+  onChange,
+  children,
+}: {
+  label: string;
+  icon: LucideIcon;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg border transition-colors duration-150",
+        checked && "border-primary/30 bg-surface-tint",
+      )}
+    >
+      <label className="flex cursor-pointer items-center gap-3 p-3 font-medium">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="accent-primary size-4"
+        />
+        <Icon className="text-primary size-4" aria-hidden />
+        {label}
+      </label>
+      {checked && <div className="border-t p-3">{children}</div>}
+    </div>
   );
 }

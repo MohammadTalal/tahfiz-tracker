@@ -1,17 +1,25 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, Plus, School } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { InitialAvatar } from "@/components/layout/avatar";
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
-import { getWorkspace } from "@/features/workspace/queries";
 import { Section } from "@/features/workspace/components/display";
+import { getProfileName, getWorkspace } from "@/features/workspace/queries";
 import { Link, redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
+
+const rowClass =
+  "bg-card hover:border-primary/40 flex items-center gap-3 rounded-xl border p-4 shadow-(--shadow-soft) transition-colors duration-150";
 
 export default async function DashboardPage({ params }: PageProps<"/[locale]/dashboard">) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);
   const user = await requireUser();
-  const { organizations, children } = await getWorkspace(user.id);
+  const [{ organizations, children }, name] = await Promise.all([
+    getWorkspace(user.id),
+    getProfileName(user.id),
+  ]);
 
   if (organizations.length === 0 && children.length === 0) {
     return redirect({ href: "/onboarding", locale });
@@ -21,22 +29,19 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/das
   }
 
   const t = await getTranslations("Dashboard");
-  const Chevron = locale === "ar" ? ChevronLeft : ChevronRight;
 
   return (
-    <>
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+      <PageHeader title={name ? t("greeting", { name }) : t("title")} description={t("subtitle")} />
       {children.length > 0 && (
         <Section title={t("yourChildren")}>
-          <ul className="flex flex-col divide-y rounded-lg border">
+          <ul className="grid gap-3 sm:grid-cols-2">
             {children.map((child) => (
               <li key={child.id}>
-                <Link
-                  href={`/children/${child.id}`}
-                  className="hover:bg-muted flex items-center justify-between p-3"
-                >
-                  <span className="font-medium">{child.display_name}</span>
-                  <Chevron className="text-muted-foreground size-4" aria-hidden />
+                <Link href={`/children/${child.id}`} className={rowClass}>
+                  <InitialAvatar name={child.display_name} />
+                  <span className="flex-1 truncate font-semibold">{child.display_name}</span>
+                  <ChevronLeft className="text-subtle-foreground size-4 ltr:rotate-180" aria-hidden />
                 </Link>
               </li>
             ))}
@@ -45,31 +50,40 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/das
       )}
       {organizations.length > 0 && (
         <Section title={t("yourOrganizations")}>
-          <ul className="flex flex-col divide-y rounded-lg border">
+          <ul className="grid gap-3 sm:grid-cols-2">
             {organizations.map((org) => (
               <li key={org.id}>
-                <Link
-                  href={`/o/${org.id}`}
-                  className="hover:bg-muted flex items-center justify-between gap-2 p-3"
-                >
-                  <span className="font-medium">{org.name}</span>
-                  <span className="flex items-center gap-1">
-                    {org.roles.map((role) => (
-                      <Badge key={role} variant="secondary">
-                        {t(`role_${role}`)}
-                      </Badge>
-                    ))}
-                    <Chevron className="text-muted-foreground size-4" aria-hidden />
+                <Link href={`/o/${org.id}`} className={rowClass}>
+                  <span
+                    className="bg-mint text-primary grid size-10 shrink-0 place-items-center rounded-lg"
+                    aria-hidden
+                  >
+                    <School className="size-5" />
                   </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate font-semibold">{org.name}</span>
+                    <span className="flex gap-1">
+                      {org.roles.map((role) => (
+                        <Badge key={role} variant="mint">
+                          {t(`role_${role}`)}
+                        </Badge>
+                      ))}
+                    </span>
+                  </span>
+                  <ChevronLeft className="text-subtle-foreground size-4 ltr:rotate-180" aria-hidden />
                 </Link>
               </li>
             ))}
           </ul>
         </Section>
       )}
-      <Link href="/onboarding" className="text-primary text-sm underline-offset-4 hover:underline">
+      <Link
+        href="/onboarding"
+        className="text-primary hover:text-primary-strong flex w-fit items-center gap-1.5 text-sm font-medium"
+      >
+        <Plus className="size-4" aria-hidden />
         {t("createAnother")}
       </Link>
-    </>
+    </div>
   );
 }

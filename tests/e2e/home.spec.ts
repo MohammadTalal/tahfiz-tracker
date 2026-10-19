@@ -8,7 +8,7 @@ test.describe("Arabic browser", () => {
     await expect(page).toHaveURL(/\/ar$/);
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("html")).toHaveAttribute("lang", "ar");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("منصة تحفيظ القرآن");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("سجّل حفظ القرآن في ثوانٍ");
   });
 });
 
@@ -17,7 +17,7 @@ test("switches to English with left-to-right layout", async ({ page }) => {
   await page.getByRole("link", { name: "English" }).click();
   await expect(page).toHaveURL(/\/en$/);
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Quran Learning Platform");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Quran memorization, recorded in seconds");
 });
 
 test("sends security headers", async ({ request }) => {

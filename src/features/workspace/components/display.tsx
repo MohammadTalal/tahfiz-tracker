@@ -1,18 +1,34 @@
-import { ChevronLeft, Lock } from "lucide-react";
+import {
+  BookMarked,
+  BookOpen,
+  ListChecks,
+  Lock,
+  MessageSquareQuote,
+  Repeat2,
+  type LucideIcon,
+} from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
+import type { ReactNode } from "react";
+import { EmptyState } from "@/components/layout/empty-state";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "@/i18n/navigation";
 import { ayahCount } from "@/lib/quran/ayah-counts";
 import { formatPassage, passageFromRow, type QuranLocale } from "@/lib/quran/format";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { CompleteAssignmentButton } from "./complete-assignment-button";
+import { RATING_STYLE } from "./rating-style";
 
 type Rating = Database["public"]["Enums"]["performance_rating"];
 type PassageRow = { start_surah: number; start_ayah: number; end_surah: number; end_ayah: number };
 
-export function PassageLabel({ row }: { row: PassageRow }) {
+/** A Quran reference ("الملك ١–٥"). Arabic uses the Naskh Quran face, slightly larger. */
+export function PassageLabel({ row, className }: { row: PassageRow; className?: string }) {
   const locale = useLocale() as QuranLocale;
-  return <span>{formatPassage(passageFromRow(row), locale, ayahCount)}</span>;
+  return (
+    <span className={cn(locale === "ar" && "font-quran text-[1.15em] leading-snug", className)}>
+      {formatPassage(passageFromRow(row), locale, ayahCount)}
+    </span>
+  );
 }
 
 /** Parses a "YYYY-MM-DD" date as UTC midnight, so formatting never shifts the day. */
@@ -38,13 +54,13 @@ export function DateLabel({ date }: { date: string }) {
 
 export function RatingBadge({ rating }: { rating: Rating }) {
   const t = useTranslations("Rating");
-  const variant =
-    rating === "excellent" || rating === "very_good"
-      ? "default"
-      : rating === "good"
-        ? "secondary"
-        : "destructive";
-  return <Badge variant={variant}>{t(rating)}</Badge>;
+  const { icon: Icon, badge } = RATING_STYLE[rating];
+  return (
+    <Badge variant={badge}>
+      <Icon aria-hidden />
+      {t(rating)}
+    </Badge>
+  );
 }
 
 export type LessonItem = PassageRow & {
@@ -56,39 +72,66 @@ export type LessonItem = PassageRow & {
   privateNote: string | null;
 };
 
-export function LessonList({ lessons }: { lessons: LessonItem[] }) {
+/** Lesson history as a vertical timeline, newest first. */
+export function LessonList({ lessons, emptyAction }: { lessons: LessonItem[]; emptyAction?: ReactNode }) {
   const t = useTranslations("Student");
   const tm = useTranslations("Mistake");
-  if (lessons.length === 0) return <p className="text-muted-foreground text-sm">{t("noLessons")}</p>;
+  if (lessons.length === 0) {
+    return (
+      <EmptyState
+        icon={BookOpen}
+        title={t("noLessons")}
+        description={t("noLessonsHint")}
+        action={emptyAction}
+      />
+    );
+  }
   return (
-    <ol className="flex flex-col divide-y rounded-lg border">
+    <ol className="border-border relative ms-2 flex flex-col gap-3 border-s-2 ps-5">
       {lessons.map((lesson) => (
-        <li key={lesson.id} className="flex flex-col gap-2 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-medium">
-              <PassageLabel row={lesson} />
-            </span>
-            <RatingBadge rating={lesson.performance_rating} />
-          </div>
-          <div className="text-muted-foreground text-sm">
-            <DateLabel date={lesson.lesson_date} />
-          </div>
-          {lesson.mistake_categories && lesson.mistake_categories.length > 0 && (
-            <ul className="flex flex-wrap gap-1">
-              {lesson.mistake_categories.map((m) => (
-                <li key={m}>
-                  <Badge variant="outline">{tm(m)}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-          {lesson.parent_visible_feedback && <p className="text-sm">{lesson.parent_visible_feedback}</p>}
-          {lesson.privateNote && (
-            <p className="bg-muted flex items-start gap-2 rounded-md p-2 text-sm">
-              <Lock className="mt-0.5 size-3.5 shrink-0" aria-label={t("privateNote")} />
-              <span>{lesson.privateNote}</span>
-            </p>
-          )}
+        <li key={lesson.id} className="relative">
+          <span
+            aria-hidden
+            className={cn(
+              "ring-background absolute -start-[1.6rem] top-4 size-3 rounded-full ring-4",
+              RATING_STYLE[lesson.performance_rating].dot,
+            )}
+          />
+          <article className="bg-card flex flex-col gap-2.5 rounded-xl border p-4 shadow-(--shadow-soft)">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex flex-col">
+                <PassageLabel row={lesson} className="font-semibold" />
+                <span className="text-muted-foreground text-xs">
+                  <DateLabel date={lesson.lesson_date} />
+                </span>
+              </div>
+              <RatingBadge rating={lesson.performance_rating} />
+            </div>
+            {lesson.mistake_categories && lesson.mistake_categories.length > 0 && (
+              <ul className="flex flex-wrap gap-1.5" aria-label={t("mistakes")}>
+                {lesson.mistake_categories.map((m) => (
+                  <li key={m}>
+                    <Badge variant="outline">{tm(m)}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {lesson.parent_visible_feedback && (
+              <p className="bg-gold-soft text-foreground flex items-start gap-2 rounded-lg p-2.5 text-sm">
+                <MessageSquareQuote className="text-gold-foreground mt-0.5 size-4 shrink-0" aria-hidden />
+                <span dir="auto">{lesson.parent_visible_feedback}</span>
+              </p>
+            )}
+            {lesson.privateNote && (
+              <p className="bg-muted flex items-start gap-2 rounded-lg p-2.5 text-sm">
+                <Lock
+                  className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                  aria-label={t("privateNote")}
+                />
+                <span dir="auto">{lesson.privateNote}</span>
+              </p>
+            )}
+          </article>
         </li>
       ))}
     </ol>
@@ -113,61 +156,86 @@ export function AssignmentList({
   const t = useTranslations("Student");
   const format = useFormatter();
   const locale = useLocale();
-  if (assignments.length === 0) return <p className="text-muted-foreground text-sm">{t("noAssignments")}</p>;
+  if (assignments.length === 0) {
+    return <EmptyState icon={ListChecks} title={t("noAssignments")} description={t("noAssignmentsHint")} />;
+  }
   return (
-    <ul className="flex flex-col gap-2">
-      {assignments.map((a) => (
-        <li key={a.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
-          <Badge variant={a.assignment_type === "memorization" ? "default" : "secondary"}>
-            {t(`assignment_${a.assignment_type}`)}
-          </Badge>
-          <span className="font-medium">
-            <PassageLabel row={a} />
-          </span>
-          {a.status !== "assigned" && <Badge variant="outline">{t(`status_${a.status}`)}</Badge>}
-          <span className="ms-auto flex items-center gap-3">
-            {a.due_date && (
-              <span className="text-muted-foreground text-sm">
-                {t("due", {
-                  date: format.dateTime(dayAsUtc(a.due_date), dayFormat(locale)),
-                })}
-              </span>
-            )}
-            {canComplete && <CompleteAssignmentButton assignmentId={a.id} />}
-          </span>
-        </li>
-      ))}
+    <ul className="bg-card flex flex-col divide-y rounded-xl border shadow-(--shadow-soft)">
+      {assignments.map((a) => {
+        const memorize = a.assignment_type === "memorization";
+        const Icon = memorize ? BookMarked : Repeat2;
+        return (
+          <li key={a.id} className="flex flex-wrap items-center gap-3 p-4">
+            <span
+              className={cn(
+                "grid size-9 shrink-0 place-items-center rounded-lg",
+                memorize ? "bg-mint text-primary" : "bg-gold-soft text-gold-foreground",
+              )}
+              aria-hidden
+            >
+              <Icon className="size-4.5" />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-muted-foreground text-xs">{t(`assignment_${a.assignment_type}`)}</span>
+              <PassageLabel row={a} className="font-semibold" />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {a.status !== "assigned" && <Badge variant="outline">{t(`status_${a.status}`)}</Badge>}
+              {a.due_date && (
+                <span className="text-muted-foreground text-xs">
+                  {t("due", { date: format.dateTime(dayAsUtc(a.due_date), dayFormat(locale)) })}
+                </span>
+              )}
+              {canComplete && <CompleteAssignmentButton assignmentId={a.id} />}
+            </div>
+          </li>
+        );
+      })}
     </ul>
-  );
-}
-
-export function BackLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 self-start text-sm"
-    >
-      <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden />
-      {label}
-    </Link>
   );
 }
 
 export function Section({
   title,
+  description,
   children,
   action,
 }: {
   title: string;
-  children: React.ReactNode;
-  action?: React.ReactNode;
+  description?: string;
+  children: ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="flex items-end justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {description && <p className="text-muted-foreground text-sm">{description}</p>}
+        </div>
         {action}
       </div>
+      {children}
+    </section>
+  );
+}
+
+/** A plain white panel for side content (no nested cards inside). */
+export function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon?: LucideIcon;
+  children: ReactNode;
+}) {
+  return (
+    <section className="bg-card flex flex-col gap-3 rounded-xl border p-5 shadow-(--shadow-soft)">
+      <h2 className="flex items-center gap-2 font-semibold">
+        {Icon && <Icon className="text-primary size-4.5" aria-hidden />}
+        {title}
+      </h2>
       {children}
     </section>
   );

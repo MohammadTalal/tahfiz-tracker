@@ -76,7 +76,9 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
 
     await expect(page).toHaveURL(studentUrl);
     await expect(page.getByText("الملك ٦–١٠")).toHaveCount(1); // saved once, assignment closed
-    await expect(page.getByText("الملك ١١–١٥")).toBeVisible(); // new assignment
+    await expect(
+      page.getByRole("main").getByRole("listitem").filter({ hasText: "الملك ١١–١٥" }),
+    ).toBeVisible(); // new assignment
   });
 
   await test.step("picks a passage by page", async () => {

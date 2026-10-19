@@ -7,9 +7,9 @@ export function LegalPage({ doc, showMeta = true }: { doc: LegalDocument; showMe
   const format = useFormatter();
 
   return (
-    <article className="flex flex-col gap-6">
+    <article className="bg-card mx-auto flex w-full max-w-3xl flex-col gap-7 rounded-2xl border p-6 shadow-(--shadow-soft) sm:p-10">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">{doc.title}</h1>
+        <h1 className="text-[1.75rem] font-bold tracking-tight">{doc.title}</h1>
         {showMeta && (
           <p className="text-muted-foreground text-sm">
             {t("lastUpdated", {
@@ -21,14 +21,11 @@ export function LegalPage({ doc, showMeta = true }: { doc: LegalDocument; showMe
           </p>
         )}
         {showMeta && !SITE.legalReviewed && (
-          <p
-            role="note"
-            className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
-          >
+          <p role="note" className="bg-warning-soft text-warning rounded-lg p-3 text-sm">
             {t("draftNotice")}
           </p>
         )}
-        <p className="leading-relaxed">{doc.intro}</p>
+        <p className="text-muted-foreground text-[1.05rem] leading-relaxed">{doc.intro}</p>
       </header>
 
       {doc.sections.map((section) => (

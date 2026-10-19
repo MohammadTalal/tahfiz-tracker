@@ -170,3 +170,26 @@ export async function getParents(studentId: string) {
   if (error) throw error;
   return data.map((r) => ({ id: r.id, status: r.status, name: r.profiles?.display_name ?? "" }));
 }
+
+export async function getProfileName(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.display_name ?? "";
+}
+
+/** Total active lessons for a student (exact count, not limited like getLessons). */
+export async function getLessonCount(studentId: string) {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("memorization_records")
+    .select("id", { count: "exact", head: true })
+    .eq("student_id", studentId)
+    .eq("status", "active");
+  if (error) throw error;
+  return count ?? 0;
+}

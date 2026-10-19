@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useId, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { ayahCount, SURAH_COUNT } from "@/lib/quran/ayah-counts";
 import { JUZ_COUNT, PAGE_COUNT, passageForJuz, passageForPages } from "@/lib/quran/divisions";
 import { formatPassage, type QuranLocale } from "@/lib/quran/format";
@@ -76,12 +77,12 @@ function SurahSelect({
           aria-label={t("searchSurah")}
           className="w-36 shrink-0"
         />
-        <select
+        <NativeSelect
           id={id}
           value={value ?? ""}
           onChange={(e) => onChange(Number(e.target.value))}
           aria-invalid={invalid || undefined}
-          className="border-input bg-background aria-invalid:border-destructive h-9 min-w-0 flex-1 rounded-md border px-2 text-base"
+          className="min-w-0 flex-1"
         >
           <option value="" disabled>
             {t("selectSurah")}
@@ -95,7 +96,7 @@ function SurahSelect({
               {optionLabel(s.number, locale)}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
     </div>
   );

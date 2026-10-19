@@ -7,7 +7,18 @@
     "title": "Quran Learning Platform",
     "subtitle": "Record your students' memorization and revision in seconds, and let parents follow their progress.",
     "getStarted": "Get started",
-    "login": "Log in"
+    "login": "Log in",
+    "badge": "Free during the pilot",
+    "headline": "Quran memorization, recorded in seconds",
+    "featuresLabel": "What the platform does",
+    "feature_fast": "Record a lesson in seconds",
+    "feature_fast_desc": "Surah, rating and next passage, filled in for you.",
+    "feature_parents": "Parents follow along",
+    "feature_parents_desc": "Invite by WhatsApp or QR; they see only their child.",
+    "feature_offline": "Works on weak internet",
+    "feature_offline_desc": "Your entry is kept on the phone and saved later.",
+    "feature_private": "Private by design",
+    "feature_private_desc": "Each circle’s data is separate. No ads, ever."
   },
   "LanguageSwitcher": {
     "label": "Language",
@@ -73,7 +84,9 @@
     "yourChildren": "Your children",
     "role_admin": "Admin",
     "role_teacher": "Teacher",
-    "createAnother": "Create another organization"
+    "createAnother": "Create another organization",
+    "greeting": "Welcome, {name}",
+    "subtitle": "Choose where to continue."
   },
   "Onboarding": {
     "title": "Set up your circle",
@@ -88,7 +101,8 @@
     "type_independent": "Independent teacher",
     "type_other": "Other",
     "alsoTeacher": "I also teach students here",
-    "create": "Create"
+    "create": "Create",
+    "alsoTeacherHint": "You can record lessons yourself as well as manage the circle."
   },
   "Org": {
     "classes": "Classes",
@@ -102,14 +116,23 @@
     "inviteTeacher": "Invite a teacher",
     "data": "Data",
     "exportLessons": "Download all lessons (CSV)",
-    "exportHelp": "A spreadsheet of every lesson in this organization, including teacher notes. Keep it private."
+    "exportHelp": "A spreadsheet of every lesson in this organization, including teacher notes. Keep it private.",
+    "summary": "{classes, plural, =0 {No classes} one {# class} other {# classes}} · {students, plural, =0 {no students} one {# student} other {# students}}",
+    "noClassesHint": "Create your first class below, then add students to it.",
+    "noClassesTeacherHint": "An admin will add you to a class.",
+    "youTeach": "You teach",
+    "classAdded": "Class added",
+    "teachersHint": "Invite other teachers with a single-use link."
   },
   "Class": {
     "roster": "Students",
     "noStudents": "No students in this class yet.",
     "addStudent": "Add student",
     "studentName": "Student name",
-    "add": "Add"
+    "add": "Add",
+    "noStudentsHint": "Add your first student using the form.",
+    "studentAdded": "Student added",
+    "nameHint": "A first name or nickname is enough."
   },
   "Student": {
     "recordLesson": "Record lesson",
@@ -134,7 +157,14 @@
     "parent_pending": "Pending",
     "parent_verified": "Linked",
     "parent_revoked": "Removed",
-    "markDone": "Done"
+    "markDone": "Done",
+    "noLessonsHint": "Lessons you record will appear here, newest first.",
+    "noAssignmentsHint": "Assignments are created when you record a lesson.",
+    "mistakes": "Mistakes",
+    "currentMemorization": "Memorizing now",
+    "lastLesson": "Last lesson",
+    "lessonsCount": "Lessons recorded",
+    "none": "—"
   },
   "Lesson": {
     "title": "Record lesson — {name}",
@@ -170,7 +200,10 @@
     "fromPage": "From page",
     "toPage": "To page",
     "fromJuz": "From juz",
-    "toJuz": "To juz"
+    "toJuz": "To juz",
+    "subtitle": "Surah, rating and next steps. Takes about 30 seconds.",
+    "notes": "Notes",
+    "nextSteps": "Next steps"
   },
   "Rating": {
     "excellent": "Excellent",
@@ -207,7 +240,9 @@
     "progress": "Progress",
     "recentLessons": "Recent lessons",
     "nextUp": "Next up",
-    "teacherFeedback": "Teacher feedback"
+    "teacherFeedback": "Teacher feedback",
+    "subtitle": "Your child’s Quran progress",
+    "nowMemorizing": "Memorizing now"
   },
   "Footer": {
     "label": "Site",
