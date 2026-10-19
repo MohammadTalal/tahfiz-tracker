@@ -1,0 +1,2549 @@
+# Quran Learning & Memorization Platform
+## Master Product Requirements Document, Technical Architecture, Database Design, and Implementation Plan
+
+**Project name:** Working title — Quran Learning Platform  
+**Product type:** Multi-tenant web application / SaaS  
+**Primary users:** Mosque administrators, Quran teachers, students, and parents/guardians  
+**Initial target market:** Mosques, Quran memorization programs, Islamic schools, and independent Quran teachers  
+**Initial business model:** Free to use, with the possibility of non-intrusive advertising or sponsorship in the future  
+**Development approach:** AI-assisted development using Claude Code  
+**Document status:** Initial master specification  
+**Primary objective:** Build a secure, reliable, maintainable, mobile-friendly platform for managing Quran memorization, revision, student progress, and parent communication.
+
+---
+
+# 1. Project Vision
+
+Build a modern web platform that helps Quran teachers manage their students' memorization and revision progress while allowing parents to follow their children's learning journey.
+
+The platform must support multiple independent organizations. Each organization may represent a mosque, Quran school, memorization program, Islamic center, or another educational group.
+
+Each organization has its own administrator, teachers, classes, students, and parent relationships.
+
+The platform must make it easy for a teacher to complete the administrative work associated with a Quran lesson in as little time as possible.
+
+The core workflow should be:
+
+1. An administrator creates an organization and configures its program.
+2. The administrator invites teachers.
+3. Teachers create classes and enroll students.
+4. Teachers record each student's new memorization, revision, performance, and next assignment.
+5. Parents can access their children's progress through their own accounts.
+6. Students can view their assignments and learning history.
+7. Administrators can monitor the organization's overall progress and generate reports.
+
+The platform should prioritize usability, data security, accessibility, and low operating costs.
+
+## 1.1 Product principles
+
+- Quran memorization and revision are the primary features.
+- Recording a lesson should be fast and straightforward.
+- The interface must support Arabic and right-to-left layouts from the beginning.
+- Every organization must have strictly isolated data.
+- Parents must only access children for whom they have been explicitly authorized.
+- Teachers must only access students and classes they are authorized to manage.
+- Student records must remain available when a student changes teachers or classes.
+- Parent accounts must be optional for a student's initial enrollment.
+- The platform must work well on mobile phones, tablets, and desktop browsers.
+- The initial version must be free of unnecessary complexity.
+- The system should be designed to support future growth without requiring a complete rewrite.
+
+## 1.2 Definition of success
+
+The initial release should allow a real Quran teacher to manage a class without relying on spreadsheets or paper records for routine memorization tracking.
+
+Speed target: a teacher should be able to record a typical lesson in under 30 seconds on a phone.
+
+Success should be measured by:
+
+- Time required to record a lesson.
+- Percentage of teachers who continue using the platform after a trial period.
+- Number of active students.
+- Percentage of parents who activate their accounts.
+- Accuracy and completeness of memorization records.
+- Frequency of teacher and parent engagement.
+- Reliability and security of the platform.
+
+Do not assume commercial success merely because the application has been built. Validate the product with actual teachers and parents.
+
+---
+
+# 2. Technology Stack
+
+Use the following technologies unless a concrete technical limitation is identified.
+
+## 2.1 Frontend
+
+**Framework:** Next.js with the App Router  
+**Language:** TypeScript with strict type checking  
+**UI library:** React  
+**Styling:** Tailwind CSS  
+**UI components:** shadcn/ui  
+**Icons:** Lucide React  
+**Form handling:** React Hook Form  
+**Schema validation:** Zod  
+**Server-side data access:** Next.js Server Components and server-side service modules  
+**Client-side interactivity:** React Client Components only when needed
+
+Use the latest mutually compatible stable releases at the start of development. Pin dependencies and use a lockfile rather than automatically upgrading packages during implementation.
+
+Use TypeScript throughout the application. Avoid `any` except when strictly necessary and documented.
+
+## 2.2 Backend and data services
+
+**Database:** Supabase PostgreSQL  
+**Authentication:** Supabase Auth  
+**File storage:** Supabase Storage, only when required  
+**Database access:** Supabase-supported server and client libraries  
+**Authorization:** PostgreSQL Row Level Security (RLS), supplemented by server-side authorization checks  
+**Database schema changes:** Version-controlled SQL migrations  
+**Validation:** Zod schemas and PostgreSQL constraints
+
+Do not introduce a separate backend service initially. Use Next.js server-side functionality together with Supabase.
+
+Do not put database service-role keys or other privileged secrets in browser-accessible code.
+
+## 2.3 Hosting and development tools
+
+- **Application hosting:** Vercel or a compatible hosting provider.
+- **Database and authentication hosting:** Supabase.
+- **Source control:** Git and GitHub.
+- **AI coding assistant:** Claude Code.
+- **Unit and component tests:** Vitest and React Testing Library.
+- **End-to-end tests:** Playwright.
+- **Code quality:** ESLint and TypeScript checks.
+- **Formatting:** Prettier.
+- **Error monitoring:** Introduce a suitable monitoring service when needed, subject to privacy requirements.
+
+## 2.4 Why this stack?
+
+Next.js provides a unified React application with server-side capabilities. Supabase reduces the amount of infrastructure that must be built and maintained. PostgreSQL supports relational data, reporting, transactions, and strong access controls.
+
+This combination is appropriate for an initial SaaS platform, provided its authorization rules are designed and tested carefully.
+
+Do not add microservices, Kubernetes, Redis, a separate backend framework, or an independent mobile application unless a demonstrated requirement justifies them.
+
+---
+
+# 3. Application Architecture
+
+Use a modular monolithic architecture.
+
+The application should have clear internal modules without being split into separately deployed services.
+
+## 3.1 High-level architecture
+
+```text
+Browser / Mobile Browser
+          |
+          v
+Next.js Application
+  |
+  |-- Public Pages
+  |-- Authentication
+  |-- Organization Dashboard
+  |-- Teacher Dashboard
+  |-- Student Portal
+  |-- Parent Portal
+  |-- Administrative Services
+  |
+  v
+Server-Side Application Services
+  |
+  |-- Authentication Verification
+  |-- Authorization Checks
+  |-- Organization Context
+  |-- Memorization Management
+  |-- Assignment Management
+  |-- Reporting
+  |-- Notifications
+  |
+  v
+Supabase
+  |
+  |-- PostgreSQL
+  |-- Supabase Auth
+  |-- Storage (optional)
+  |-- Row Level Security
+```
+
+## 3.2 Architectural requirements
+
+1. Separate UI components from business logic.
+2. Separate data-access functions from presentation code.
+3. Use shared validation schemas for important forms and operations.
+4. Avoid duplicating authorization logic across pages.
+5. Never trust organization IDs, role names, or student IDs supplied by a browser without verifying access.
+6. Use database transactions or suitable atomic operations when a workflow modifies multiple related records.
+7. Store database schema changes as migrations in source control.
+8. Keep all secrets in environment variables managed by the deployment environment.
+9. Avoid unnecessary abstractions and overengineering.
+10. Document important architectural decisions.
+
+Suggested source structure:
+
+```text
+quran-platform/
+├── public/
+├── src/
+│   ├── app/
+│   │   ├── (public)/
+│   │   ├── (auth)/
+│   │   ├── (dashboard)/
+│   │   ├── admin/
+│   │   ├── teacher/
+│   │   ├── student/
+│   │   └── parent/
+│   ├── components/
+│   │   ├── ui/
+│   │   ├── layout/
+│   │   ├── forms/
+│   │   ├── memorization/
+│   │   └── reports/
+│   ├── features/
+│   │   ├── organizations/
+│   │   ├── memberships/
+│   │   ├── classes/
+│   │   ├── students/
+│   │   ├── parents/
+│   │   ├── teachers/
+│   │   ├── memorization/
+│   │   ├── revisions/
+│   │   ├── assignments/
+│   │   ├── attendance/
+│   │   └── notifications/
+│   ├── lib/
+│   │   ├── supabase/
+│   │   ├── auth/
+│   │   ├── authorization/
+│   │   ├── validation/
+│   │   ├── dates/
+│   │   └── utils/
+│   ├── server/
+│   │   ├── services/
+│   │   └── repositories/
+│   ├── types/
+│   └── config/
+├── supabase/
+│   ├── migrations/
+│   ├── seed.sql
+│   └── tests/
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+├── docs/
+│   ├── architecture.md
+│   ├── database.md
+│   ├── security.md
+│   └── deployment.md
+├── .env.example
+├── package.json
+└── README.md
+```
+
+Adjust the directory structure when implementation details require it, but retain the separation of responsibilities.
+
+---
+
+# 4. Multi-Tenant Organization Model
+
+This is one of the most important architectural requirements.
+
+The platform must support multiple independent organizations on the same application and database.
+
+Examples:
+
+- A mosque with five teachers and 80 students.
+- An Islamic school with several classes.
+- A Quran memorization program operating during weekends.
+- An independent teacher managing a small group.
+- A teacher working for more than one organization.
+
+## 4.1 Organization
+
+Each organization must have:
+
+- Unique ID.
+- Name.
+- Optional description.
+- Organization type.
+- Logo URL, optional.
+- Preferred language.
+- Time zone.
+- Contact email, optional.
+- Contact phone, optional.
+- Address, optional.
+- Status: active, suspended, or archived.
+- Creation date.
+- Last update date.
+
+An organization may configure its name and other permitted settings.
+
+## 4.2 Organization isolation
+
+Every organization-owned record must be associated with the appropriate organization, directly or through a verified relationship.
+
+A user belonging to Organization A must never access Organization B's private data merely by changing a URL, form field, API request, or database identifier.
+
+Enforce isolation through:
+
+- PostgreSQL RLS.
+- Server-side authorization checks.
+- Organization membership verification.
+- Validated relationships between records.
+- Tests that explicitly attempt cross-organization access.
+
+Do not rely only on hiding buttons or pages in the frontend.
+
+## 4.3 Multiple organizations per user
+
+The database must not assume that a user belongs to only one organization.
+
+A teacher may belong to two mosques. A parent may have children enrolled in different programs. A user may have different roles in different organizations.
+
+Store roles on organization memberships or other appropriate scoped relationships rather than as a single global role on the user profile.
+
+---
+
+# 5. User Roles and Permissions
+
+The platform must support the following roles.
+
+## 5.1 Platform Super Administrator
+
+This is the internal operator of the platform, not the administrator of an individual mosque.
+
+Responsibilities:
+
+- View platform-level operational statistics.
+- Manage organization status when necessary.
+- Handle abuse and support requests.
+- Investigate operational issues using appropriately restricted access.
+- Manage platform configuration.
+
+Requirements:
+
+- This role must not be available through ordinary public registration.
+- It must not be granted simply because a user creates an organization.
+- Access must be tightly controlled and audited.
+- Do not build unrestricted access to children's records as a convenience feature.
+- Support workflows must use the minimum necessary access.
+
+A separate platform-wide administrative interface can be implemented after the core product is operational.
+
+## 5.2 Organization Administrator / Supervisor
+
+Responsibilities:
+
+- Manage organization settings.
+- Invite and manage teachers.
+- Create and manage classes.
+- Enroll students.
+- Assign teachers to classes and students.
+- Manage parent invitations and authorized relationships.
+- View organization-level reports.
+- Review memorization progress.
+- Manage organization memberships.
+- Archive records according to approved retention rules.
+
+An organization administrator should not automatically become the parent or teacher of every student.
+
+## 5.3 Teacher
+
+Responsibilities:
+
+- View assigned classes.
+- View authorized students.
+- Record memorization lessons.
+- Record revision work.
+- Assess performance.
+- Assign upcoming memorization.
+- Assign revision.
+- Record attendance, if enabled.
+- Review student history.
+- Add educational notes.
+- View reports for authorized students.
+
+Teachers must not be able to:
+
+- Change organization ownership.
+- Manage platform-wide settings.
+- Access unrelated organizations.
+- Read private records belonging to students outside their assigned scope.
+- Change their role to administrator.
+
+## 5.4 Student
+
+Student accounts are optional in the initial release.
+
+A student account can:
+
+- View assigned memorization.
+- View revision tasks.
+- View completed lessons.
+- View permitted teacher feedback.
+- See personal progress.
+- Mark a task as practiced or completed when that functionality is enabled.
+
+A student's self-reported completion must not automatically count as a teacher-verified memorization result.
+
+For younger children, avoid unnecessary personal information and keep the interface simple.
+
+## 5.5 Parent / Guardian
+
+A parent account can:
+
+- View each linked child's progress.
+- Switch between linked children.
+- View completed memorization lessons.
+- View upcoming assignments.
+- View revision tasks.
+- Read teacher feedback intended for parents.
+- View permitted attendance information.
+- Receive progress notifications when enabled.
+- Manage their own notification preferences.
+
+A parent must not be able to:
+
+- Access another family's students.
+- Change a teacher's assessment.
+- Modify a student's memorization history.
+- Assign lessons on behalf of the teacher.
+- Access organization administration unless separately authorized.
+
+## 5.6 Permission matrix
+
+| Capability | Platform admin | Organization admin | Teacher | Student | Parent |
+|---|---|---|---|---|---|
+| Manage platform | Yes | No | No | No | No |
+| Manage organization settings | Restricted | Yes | No | No | No |
+| Invite teachers | Support only | Yes | No | No | No |
+| Manage classes | Support only | Yes | Assigned scope only | No | No |
+| Record verified memorization | No by default | If explicitly authorized | Assigned students | No | No |
+| View student progress | Restricted support access | Organization scope | Assigned scope | Own records | Linked children |
+| View assignments | Authorized support only | Organization scope | Assigned scope | Own assignments | Linked children |
+| Manage parent links | Restricted support access | Yes | Limited if authorized | No | Accept or verify invitation |
+| Change teacher assessment | No by default | Audited administrative correction | Authorized records | No | No |
+
+All permissions must be enforced by the backend and database policies, not merely by the user interface.
+
+---
+
+# 6. Authentication and Account Management
+
+## 6.1 Authentication
+
+Use Supabase Auth.
+
+Support:
+
+- Email and password registration where appropriate.
+- Email verification.
+- Secure login and logout.
+- Password reset.
+- Session management.
+- Protected application routes.
+- Invitation-based onboarding.
+- Account deactivation and deletion workflows where legally appropriate.
+
+Do not implement your own password storage.
+
+Never store plaintext passwords.
+
+## 6.2 Registration options
+
+The initial application should support these entry paths:
+
+### Path A: Organization administrator
+
+1. User registers.
+2. User verifies their email.
+3. User creates an organization.
+4. The system creates the organization membership with the administrator role.
+5. The user may select "I am also a teacher". If selected, the system also creates a teacher membership in the same step.
+6. The user enters the organization dashboard.
+7. The user can invite teachers.
+
+This supports independent teachers who run their own small group and act as both administrator and teacher. Their setup should take a single short flow.
+
+### Path B: Invited teacher
+
+1. Administrator creates an invitation.
+2. The teacher receives an invitation link.
+3. The teacher signs in or creates an account.
+4. The system verifies the invitation.
+5. The teacher joins the correct organization with the intended role.
+6. The invitation is marked as accepted.
+
+### Path C: Parent
+
+1. Teacher or administrator initiates a parent invitation for a specific student.
+2. The parent receives a secure invitation.
+3. The parent signs in or creates an account.
+4. The parent verifies the invitation.
+5. The system establishes the authorized parent-student relationship.
+6. The parent can view the child's permitted information.
+
+### Path D: Student
+
+Student account creation is optional.
+
+The system should support student records without requiring students to have login credentials.
+
+If student accounts are enabled, use a controlled enrollment process and apply additional safeguards for minors.
+
+## 6.3 Invitations
+
+Invitations must:
+
+- Use cryptographically secure, unpredictable tokens.
+- Expire after a configurable period.
+- Be single-use.
+- Be associated with the intended organization and role.
+- Be associated with the intended student when applicable.
+- Be invalidated when revoked.
+- Avoid exposing private student information in URLs.
+- Be validated on the server before any relationship is created.
+
+Store only a secure hash of the invitation token when practical.
+
+Invitation delivery:
+
+- Many parents communicate mainly through WhatsApp or phone, not email.
+- Email delivery must be optional.
+- The issuer must be able to copy a secure invitation link and share it through WhatsApp, a phone's messaging app, or a QR code.
+- Shared links follow the same expiry, single-use, revocation, and server-side validation rules as emailed invitations.
+- Shared links must not contain the student's name or other private information.
+
+Do not allow an invitation to grant a more privileged role than the issuer is authorized to assign.
+
+---
+
+# 7. Organization and Class Management
+
+## 7.1 Organization dashboard
+
+Display:
+
+- Total active students.
+- Total active teachers.
+- Total active classes.
+- Recent memorization activity.
+- Students with upcoming assignments.
+- Students who may need attention.
+- Recent attendance statistics, if enabled.
+- Quick actions for creating classes, adding students, and inviting teachers.
+
+Statistics must be calculated from authorized organization data.
+
+## 7.2 Class management
+
+Each class should contain:
+
+- Name.
+- Organization ID.
+- Optional description.
+- Assigned teacher or teachers.
+- Active student enrollment.
+- Schedule information, optional.
+- Status.
+- Creation and update dates.
+
+Features:
+
+- Create a class.
+- Edit class information.
+- Assign and remove teachers.
+- Enroll and remove students.
+- View class roster.
+- View class-level progress.
+- Archive a class.
+- Preserve student history after a class is archived.
+
+A class may have multiple teachers if authorized.
+
+A teacher may teach multiple classes.
+
+## 7.3 Student enrollment
+
+An administrator or authorized teacher can add a student.
+
+Required information should be minimal:
+
+- Student display name.
+- Organization.
+- Assigned class or classes.
+- Assigned teacher or teachers.
+- Enrollment date.
+
+Optional information:
+
+- Preferred display name.
+- Parent or guardian contact workflow.
+- Learning notes.
+- Enrollment status.
+
+Avoid collecting unnecessary birth dates, addresses, school details, or other sensitive information.
+
+Student enrollment must not require an active parent account.
+
+---
+
+# 8. Student Profiles
+
+Each student should have a dedicated profile containing the student's learning history.
+
+## 8.1 Profile sections
+
+1. Overview.
+2. Memorization history.
+3. Revision history.
+4. Upcoming assignments.
+5. Progress statistics.
+6. Teacher feedback.
+7. Attendance, if enabled.
+8. Parent or guardian relationships, visible only to authorized personnel.
+9. Enrollment and class history.
+
+## 8.2 Student overview
+
+Display:
+
+- Student name.
+- Current organization.
+- Current class.
+- Assigned teacher.
+- Total verified lessons.
+- Recently memorized verses.
+- Current memorization target.
+- Pending revision tasks.
+- Recent performance trend.
+- Upcoming assignments.
+
+Progress indicators must clearly distinguish between assigned, student-reported, and teacher-verified work.
+
+## 8.3 Student transfers
+
+When a student changes teachers or classes:
+
+- Preserve all historical records.
+- Update the current assignment relationships.
+- Revoke the former teacher's access to the student when no longer authorized.
+- Allow authorized administrators to view historical records.
+- Preserve the original author and timestamp of each lesson.
+- Do not silently rewrite historical teacher assessments.
+
+If students transfer between organizations, require an explicit, authorized transfer or import workflow. Never grant a new organization automatic access to the student's previous organization's records.
+
+---
+
+# 9. Quran Reference System
+
+The platform must have a reliable way to identify Quran passages.
+
+## 9.1 Reference structure
+
+A Quran passage is a range from a starting point to an ending point. A passage may cross surahs.
+
+Each passage must support:
+
+- Starting surah number.
+- Starting ayah number.
+- Ending surah number.
+- Ending ayah number.
+- Surah names in Arabic and English for display.
+- Optional display text for a selected passage.
+
+Store canonical references using numeric identifiers.
+
+Examples:
+
+- Surah 67, ayah 1 → Surah 67, ayah 5.
+- Juz 30: Surah 78, ayah 1 → Surah 114, ayah 6.
+
+Do not store only a free-text description such as "Surah Al-Mulk first five verses" as the authoritative reference.
+
+## 9.1.1 Selecting passages
+
+Teacher feedback confirms that teachers mainly track students by surah. The surah and ayah selector is therefore the primary, default selection method and must be the fastest path. Page, juz, and hizb selection are secondary options for teachers who prefer them.
+
+Teachers must be able to select a passage by:
+
+- Surah and ayah.
+- Page number.
+- Juz.
+- Hizb or quarter-hizb.
+
+Whatever the selection method, the system must convert the selection into a canonical ayah range for storage. Displays may show the passage in the teacher's preferred format (for example, "pages 10–12" or "Juz 30").
+
+## 9.2 Quran metadata
+
+Use a reliable, appropriately licensed Quran metadata source.
+
+Include:
+
+- All 114 surahs.
+- Correct Arabic surah names.
+- English transliterations or translations where appropriate.
+- Number of verses in each surah.
+- Page, juz, and hizb mapping for every ayah.
+- Validation of verse ranges.
+
+### Mushaf and riwayah
+
+Ayah counts and page numbers differ between riwayat and Mushaf printings (for example, Hafs and Warsh).
+
+- The default is the Hafs ʿan ʿĀsim riwayah with the standard Madani Mushaf (604 pages).
+- Store the riwayah/Mushaf as an organization setting so other options can be added later.
+- Do not mix data from different riwayat in the same reference set.
+
+Store canonical metadata in the database or application data files with documented provenance and licensing.
+
+Do not depend on an external API for every dropdown interaction.
+
+## 9.3 Reference validation
+
+The system must reject:
+
+- Invalid surah numbers.
+- Ayah numbers below 1.
+- Ayah numbers beyond the surah's actual verse count.
+- An ending point that comes before the starting point.
+- Invalid page, juz, or hizb numbers.
+- Invalid or inconsistent Quran references.
+
+The application should allow teachers to select passages through searchable surah, ayah, page, juz, and hizb selectors.
+
+Avoid requiring teachers to type Quran references manually.
+
+---
+
+# 10. Memorization Management
+
+This is the core feature of the application.
+
+## 10.1 Record a memorization lesson
+
+A teacher should be able to open a student profile and record a lesson using a fast, simple form.
+
+Required fields:
+
+- Student.
+- Lesson date.
+- Passage (starting surah and ayah, ending surah and ayah; selectable by ayah, page, juz, or hizb).
+- Performance result.
+- Teacher or recording user.
+
+Optional fields:
+
+- Accuracy score.
+- Number or category of mistakes.
+- Fluency assessment.
+- Tajweed assessment.
+- Teacher comments.
+- Whether the lesson meets the completion criteria.
+- Next memorization assignment.
+- Next revision assignment.
+
+The system should automatically record:
+
+- Organization.
+- Recording user.
+- Creation timestamp.
+- Last update timestamp.
+- Record status.
+
+## 10.2 Performance assessment
+
+Use configurable assessment categories, such as:
+
+- Excellent.
+- Very good.
+- Good.
+- Needs improvement.
+- Not completed.
+
+Allow organizations to configure the wording later.
+
+Do not treat these labels as objective measurements of Quran mastery. They are teacher assessments.
+
+If a numerical score is enabled, document its scale and meaning.
+
+## 10.3 Mistake tracking
+
+Allow teachers to record useful information about mistakes, such as:
+
+- Forgotten words.
+- Sequence mistakes.
+- Pronunciation issues.
+- Tajweed issues.
+- Hesitation.
+- Other teacher-defined observations.
+
+Avoid creating an unnecessarily complicated scoring system in the first release.
+
+The teacher must remain responsible for evaluating actual recitation.
+
+## 10.4 Editing and correcting records
+
+Teachers may correct authorized records.
+
+Requirements:
+
+- Preserve the original creation timestamp and creator.
+- Record the last editor.
+- Keep a history of important changes.
+- Do not silently erase completed lesson history.
+- Require a reason for sensitive administrative corrections where appropriate.
+- Provide an audited soft-deletion or correction workflow instead of uncontrolled permanent deletion.
+
+## 10.5 Batch recording
+
+Support a later enhancement that allows teachers to record lessons for multiple students in a class.
+
+This must not compromise student-specific assessments or create accidental duplicate records.
+
+The first version should prioritize a reliable individual-student workflow.
+
+---
+
+# 11. Memorization and Revision Assignments
+
+New memorization and revision must be separate concepts.
+
+A student may be learning new verses while revising older passages.
+
+Both kinds of assignment share almost the same fields, so they are stored in one `assignments` table with an `assignment_type` of `memorization` or `revision` (see Section 19). They must still be shown, counted, and reported separately.
+
+## 11.1 New memorization assignment
+
+Fields:
+
+- Student.
+- Assigned by.
+- Passage (starting surah and ayah, ending surah and ayah).
+- Assigned date.
+- Due date, optional.
+- Instructions, optional.
+- Status.
+
+Possible statuses:
+
+- Assigned.
+- In progress.
+- Student reports completed.
+- Teacher verified.
+- Needs further practice.
+- Cancelled.
+
+Do not automatically mark an assignment as teacher-verified merely because the student marks it complete.
+
+## 11.2 Revision assignment
+
+Fields:
+
+- Student.
+- Passage (starting surah and ayah, ending surah and ayah). A revision passage may span several surahs, pages, or a full juz.
+- Assigned date.
+- Due date, optional.
+- Priority, optional.
+- Teacher instructions.
+- Status.
+- Completion and verification timestamps.
+
+Revision may cover previously memorized passages from several surahs. A single revision assignment may cover a cross-surah range such as a full juz; several separate passages may be assigned as several assignments.
+
+## 11.3 Next assignment workflow
+
+After recording a lesson, the teacher should be able to:
+
+1. Save the completed memorization record.
+2. Assign the next passage.
+3. Assign one or more revision passages.
+4. Add a note.
+5. Save all changes.
+
+The application should offer suggested next verses, but the teacher must be able to modify or override them.
+
+### Example
+
+If the student completed Surah 67, verses 1–5, the system may suggest verses 6–10 as the next passage.
+
+The suggestion is valid only if the teacher confirms it and the reference is valid.
+
+The system must not assume that every student should progress sequentially or that a particular passage is appropriate for every student.
+
+## 11.4 Assignment history
+
+Every assignment must have a clear history.
+
+The system must distinguish between:
+
+- The original assignment.
+- Changes to the assignment.
+- Student-reported completion.
+- Teacher verification.
+- Cancellation.
+- Reassignment.
+
+A student's historical assignment must not be overwritten merely because a new assignment is created.
+
+---
+
+# 12. Revision Planning and Recommendations
+
+Revision is an important part of Quran memorization.
+
+The system should help teachers identify passages that need attention without pretending to assess recitation automatically.
+
+## 12.1 Initial revision functionality
+
+Include:
+
+- Manual revision assignments.
+- Revision history.
+- Outstanding revision tasks.
+- Overdue revision tasks.
+- Teacher notes.
+- A list of previously memorized passages.
+- A way to assign a previous passage again.
+
+## 12.2 Future revision recommendations
+
+A later version may suggest passages based on:
+
+- Time since last revision.
+- Teacher assessment.
+- Previous mistake categories.
+- Incomplete assignments.
+- Teacher-defined revision schedules.
+
+These suggestions must be explainable and editable.
+
+Do not describe a passage as "forgotten" solely because its revision is overdue.
+
+Do not introduce complex machine learning in the initial version.
+
+---
+
+# 13. Parent Portal
+
+The parent portal is one of the primary differentiating features of the product.
+
+## 13.1 Parent dashboard
+
+Display:
+
+- Linked children.
+- Each child's current class.
+- Assigned teacher.
+- Recently completed memorization.
+- Next memorization assignment.
+- Pending revision.
+- Recent teacher feedback.
+- Progress over time.
+- Attendance, if enabled.
+- Important notifications.
+
+## 13.2 Multiple children
+
+A single parent account may be linked to several children.
+
+The parent must be able to switch between children without signing out.
+
+The application must verify the relationship for each child independently.
+
+## 13.3 Parent access boundaries
+
+Parents must see only information explicitly permitted for the linked child.
+
+Do not expose:
+
+- Internal administrative notes.
+- Private notes intended only for teachers.
+- Other students' records.
+- Other families' contact details.
+- Internal moderation or security records.
+- Organization-level information unrelated to their children.
+
+Separate parent-visible feedback from teacher-only notes.
+
+## 13.4 Parent activation
+
+Parent activation must be optional.
+
+Teachers can manage a student even if the parent has not registered.
+
+The system may display:
+
+- Parent invitation not sent.
+- Invitation sent.
+- Invitation accepted.
+- Invitation expired.
+- Invitation revoked.
+
+The teacher should be able to share a parent invitation link directly through WhatsApp or a QR code (see Section 6.3).
+
+Do not block normal lesson recording because a parent account has not been created.
+
+## 13.5 Parent notifications
+
+Notifications may include:
+
+- A new lesson has been recorded.
+- A new assignment has been created.
+- A revision task is due.
+- A teacher has added parent-visible feedback.
+- An attendance event has been recorded, if enabled.
+
+Notifications should not include unnecessary personal details in email subject lines or push notification previews.
+
+Parents should be able to manage non-essential notifications.
+
+---
+
+# 14. Student Portal
+
+The student portal should be simpler than the teacher interface.
+
+## 14.1 Student dashboard
+
+Display:
+
+- Today's assignments.
+- Upcoming memorization.
+- Revision tasks.
+- Recently completed lessons.
+- Teacher feedback intended for the student.
+- Learning progress.
+
+## 14.2 Student actions
+
+Where enabled, students may:
+
+- View assignments.
+- Mark a task as practiced.
+- Report that they have completed practice.
+- View their own history.
+- Review teacher feedback.
+
+Students cannot create teacher-verified memorization records.
+
+A student must not be able to modify an official assessment or access another student's profile.
+
+## 14.3 Child safety
+
+Student accounts must be optional in the first release.
+
+Avoid public profiles, open messaging, public leaderboards, and unnecessary personal data.
+
+If student access is enabled for minors, review age-appropriate consent, account creation, privacy, and communication requirements before deployment.
+
+---
+
+# 15. Attendance Management
+
+Attendance is a useful supporting feature but should not delay the core memorization workflow.
+
+## 15.1 Attendance statuses
+
+Support:
+
+- Present.
+- Absent.
+- Excused absence.
+- Late.
+
+## 15.2 Attendance workflow
+
+Teachers can:
+
+1. Open a class.
+2. Select the lesson date.
+3. Mark attendance for each enrolled student.
+4. Save attendance.
+5. Correct an authorized attendance entry when necessary.
+
+The application should prevent accidental duplicate attendance records for the same student, class, and session.
+
+Attendance records must retain their history when a student moves classes.
+
+## 15.3 Parent access
+
+Parents may view their own children's attendance, subject to organization settings.
+
+Do not expose the attendance records of other students.
+
+---
+
+# 16. Reporting and Analytics
+
+## 16.1 Teacher reports
+
+Provide:
+
+- Student progress overview.
+- Memorization history.
+- Revision history.
+- Outstanding assignments.
+- Overdue assignments.
+- Performance history.
+- Attendance summary, if enabled.
+
+## 16.2 Organization reports
+
+Provide:
+
+- Active student count.
+- Active teacher count.
+- Active class count.
+- Student enrollment overview.
+- Recent memorization activity.
+- Assignment completion overview.
+- Attendance summary.
+- Students who may need additional attention.
+
+Avoid rankings that may shame or pressure students.
+
+## 16.3 Parent reports
+
+Parents can view a simple progress timeline for their linked children.
+
+## 16.4 Reporting accuracy
+
+Define all statistics precisely.
+
+For example, "completed memorization lessons" should count the intended verified records rather than every draft or student-reported completion.
+
+Ensure filters respect organization, teacher, class, student, and date boundaries.
+
+## 16.5 Exporting
+
+CSV export may be added for authorized administrators and teachers.
+
+Exports must:
+
+- Respect the user's permissions.
+- Include only authorized records.
+- Avoid unnecessary sensitive fields.
+- Escape CSV values safely.
+- Be protected against spreadsheet formula injection.
+- Avoid exposing data through publicly accessible files.
+
+---
+
+# 17. User Interface and Experience
+
+The application must be professional, simple, and mobile-friendly.
+
+## 17.1 Visual direction
+
+Use a calm, clean educational design.
+
+Suggested design characteristics:
+
+- Light background.
+- Green or teal as the primary accent.
+- Neutral grays for secondary surfaces.
+- Clear typography.
+- Moderate spacing.
+- Accessible contrast.
+- Subtle borders and shadows.
+- Simple icons.
+- Consistent component styling.
+
+Avoid excessive decoration, animations, and unnecessary Islamic motifs that make the interface harder to use.
+
+## 17.2 Arabic and English
+
+Support both Arabic and English.
+
+Requirements:
+
+- A language switcher.
+- Correct right-to-left layout for Arabic.
+- Left-to-right layout for English.
+- Proper handling of mixed Arabic and Latin text.
+- Localized dates and numbers where appropriate.
+- Translated navigation, forms, validation messages, and status labels.
+- No hardcoded user-facing strings scattered throughout components.
+
+Use an established localization approach compatible with Next.js.
+
+The initial default language can be Arabic, with English available.
+
+Do not assume that translating labels alone is sufficient for a correct RTL layout.
+
+## 17.3 Responsive design
+
+The application must support:
+
+- Mobile phones.
+- Tablets.
+- Desktop browsers.
+
+Teachers must be able to record lessons on a phone during a Quran class, including on weak or unstable mosque internet connections (see Section 23.2).
+
+Parent pages must be easy to read on small screens.
+
+Tables should adapt to smaller screens using appropriate layouts, horizontal scrolling, or alternative list views.
+
+## 17.4 Accessibility
+
+Follow WCAG 2.2 AA as a target.
+
+Include:
+
+- Keyboard navigation.
+- Visible focus indicators.
+- Accessible form labels.
+- Semantic HTML.
+- Appropriate contrast.
+- Screen-reader-friendly dialogs.
+- Accessible error messages.
+- Reduced-motion support where relevant.
+
+## 17.5 Notifications in the interface
+
+Use consistent feedback for:
+
+- Successful saves.
+- Validation failures.
+- Network failures.
+- Permission errors.
+- Expired invitations.
+- Loading states.
+- Empty states.
+
+Do not silently discard user input after an error.
+
+---
+
+# 18. Public Website
+
+The platform should have a small public-facing website.
+
+Initial pages:
+
+- Home.
+- Features.
+- About.
+- Privacy Policy.
+- Terms of Service.
+- Contact or support.
+
+The homepage should explain:
+
+- What the platform does.
+- Who it serves.
+- How teachers use it.
+- How parents follow progress.
+- How an organization can get started.
+
+Include clear calls to action for organization registration and login.
+
+Do not expose student information on public pages.
+
+The public website should be separate in navigation and access control from authenticated dashboards.
+
+---
+
+# 19. Database Design
+
+Use PostgreSQL with UUID primary keys for application entities unless a strong reason suggests otherwise.
+
+Use migrations to create and evolve the schema.
+
+All tables must have appropriate foreign keys, constraints, indexes, and access policies.
+
+The following is the logical data model. Claude Code must refine it into actual SQL migrations and document the final design before implementing the full application.
+
+## 19.1 Core tables
+
+### A. `profiles`
+
+Purpose: Store application-level information about an authenticated user.
+
+Suggested fields:
+
+- `id` UUID, primary key, references the authentication user.
+- `display_name`.
+- `preferred_language`.
+- `avatar_url`, optional.
+- `created_at`.
+- `updated_at`.
+
+Do not duplicate password information or authentication secrets in this table.
+
+### B. `organizations`
+
+Purpose: Represent mosques, Quran schools, and memorization programs.
+
+Suggested fields:
+
+- `id`.
+- `name`.
+- `slug`, unique where appropriate.
+- `organization_type`.
+- `description`, optional.
+- `logo_url`, optional.
+- `preferred_language`.
+- `timezone`.
+- `riwayah`, default Hafs (Madani 604-page Mushaf).
+- `contact_email`, optional.
+- `contact_phone`, optional.
+- `status`.
+- `created_at`.
+- `updated_at`.
+
+### C. `organization_memberships`
+
+Purpose: Connect users to organizations and define their organization-scoped roles.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `user_id`.
+- `role`.
+- `status`.
+- `joined_at`.
+- `created_at`.
+- `updated_at`.
+
+Constraints:
+
+- A user should not have duplicate active memberships for the same role and organization unless explicitly supported.
+- Role values must be validated.
+- Revoked memberships must not grant access.
+- Role changes must be authorized and audited.
+
+A user can have memberships in multiple organizations.
+
+### D. `classes`
+
+Purpose: Store organization-owned classes or Quran circles.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `name`.
+- `description`, optional.
+- `status`.
+- `created_at`.
+- `updated_at`.
+
+### E. `class_teachers`
+
+Purpose: Associate teachers with classes.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `class_id`.
+- `teacher_user_id`.
+- `created_at`.
+
+Ensure the class and teacher belong to the correct organization.
+
+### F. `students`
+
+Purpose: Store the student's educational profile.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `display_name`.
+- `status`.
+- `enrollment_date`.
+- `notes`, optional.
+- `created_at`.
+- `updated_at`.
+
+Do not require a student to have a user account.
+
+Teacher-only notes should be separated from fields that parents or students may access.
+
+### G. `class_enrollments`
+
+Purpose: Track student enrollment in classes over time.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `class_id`.
+- `student_id`.
+- `start_date`.
+- `end_date`, nullable.
+- `status`.
+- `created_at`.
+
+Preserve historical enrollment records when a student moves classes.
+
+### H. `teacher_student_assignments`
+
+Purpose: Track which teachers are authorized to teach particular students.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `teacher_user_id`.
+- `student_id`.
+- `start_date`.
+- `end_date`, nullable.
+- `status`.
+- `created_at`.
+
+This supports changes in teacher assignment without losing history.
+
+### I. `parent_student_relationships`
+
+Purpose: Link parent or guardian accounts to students.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `parent_user_id`.
+- `student_id`.
+- `relationship_type`, optional.
+- `verification_status`.
+- `created_at`.
+- `updated_at`.
+
+Constraints:
+
+- A parent can have multiple children.
+- A student can have multiple authorized guardians.
+- A relationship must be verified before it grants private data access.
+- Parent relationships must not cross organizations unintentionally.
+- Revoked relationships must no longer grant access.
+
+### J. `quran_surahs`
+
+Purpose: Store canonical surah metadata.
+
+Suggested fields:
+
+- `surah_number`, primary key.
+- `name_arabic`.
+- `name_english`.
+- `transliteration`, optional.
+- `ayah_count`.
+
+### J2. `quran_ayahs`
+
+Purpose: Store canonical per-ayah metadata used for page, juz, and hizb selection and for range validation.
+
+Suggested fields:
+
+- `surah_number`, references `quran_surahs`.
+- `ayah_number`.
+- `page_number`.
+- `juz_number`.
+- `hizb_number` (or quarter-hizb).
+- Primary key on (`surah_number`, `ayah_number`).
+
+Use the organization's riwayah/Mushaf setting (default Hafs, Madani 604-page Mushaf). Document the data source and license.
+
+### K. `memorization_records`
+
+Purpose: Store teacher-recorded memorization lessons.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `student_id`.
+- `teacher_user_id`.
+- `lesson_date`.
+- `start_surah`.
+- `start_ayah`.
+- `end_surah`.
+- `end_ayah`.
+- `idempotency_key`, unique, to prevent duplicate saves on retry.
+- `performance_rating`.
+- `accuracy_score`, nullable.
+- `mistake_summary`, optional.
+- `tajweed_assessment`, optional.
+- `teacher_private_notes`, optional.
+- `parent_visible_feedback`, optional.
+- `verification_status`.
+- `created_at`.
+- `updated_at`.
+- `created_by`.
+- `updated_by`.
+
+Important requirements:
+
+- Validate verse references against canonical Quran metadata.
+- Preserve historical records.
+- Validate teacher authorization.
+- Keep private teacher notes separate from parent-visible feedback.
+- Store timestamps consistently.
+- Define how corrections and soft deletions work.
+
+### L. `assignments`
+
+Purpose: Track both new memorization and revision work assigned to students in a single table.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `student_id`.
+- `assigned_by`.
+- `assignment_type`: `memorization` or `revision`.
+- `start_surah`.
+- `start_ayah`.
+- `end_surah`.
+- `end_ayah`.
+- `assigned_date`.
+- `due_date`, nullable.
+- `priority`, optional, used for revision assignments.
+- `instructions`, optional.
+- `status`.
+- `student_reported_completed_at`, nullable.
+- `teacher_verified_at`, nullable.
+- `idempotency_key`, unique, to prevent duplicate saves on retry.
+- `created_at`.
+- `updated_at`.
+
+Do not automatically equate student-reported completion with teacher verification.
+
+Memorization and revision must still be displayed, filtered, and reported separately using `assignment_type`.
+
+### N. `attendance_sessions`
+
+Purpose: Represent an attendance session for a class.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `class_id`.
+- `session_date`.
+- `created_by`.
+- `created_at`.
+- `updated_at`.
+
+### O. `attendance_records`
+
+Purpose: Store individual attendance entries.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `session_id`.
+- `student_id`.
+- `status`.
+- `recorded_by`.
+- `created_at`.
+- `updated_at`.
+
+Add appropriate uniqueness constraints to prevent duplicate attendance entries for a student in the same session.
+
+### P. `invitations`
+
+Purpose: Manage teacher, parent, and other authorized invitations.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `invitation_type`.
+- `intended_role`.
+- `email`, where required.
+- `student_id`, nullable.
+- `token_hash`.
+- `expires_at`.
+- `accepted_at`, nullable.
+- `revoked_at`, nullable.
+- `created_by`.
+- `created_at`.
+
+Use secure token generation, expiry, single-use semantics, and server-side validation.
+
+### Q. `notifications`
+
+Purpose: Store in-app notifications.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `recipient_user_id`.
+- `notification_type`.
+- `title`.
+- `body`, with sensitive information minimized.
+- `related_entity_type`, optional.
+- `related_entity_id`, optional.
+- `read_at`, nullable.
+- `created_at`.
+
+Every notification must respect the recipient's permissions and the current status of relevant relationships.
+
+### R. `audit_logs`
+
+Purpose: Record important security and administrative events.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`, nullable for platform-level events.
+- `actor_user_id`, nullable for system events.
+- `action`.
+- `entity_type`.
+- `entity_id`.
+- `created_at`.
+- `metadata`, restricted to non-sensitive operational information.
+
+Never log passwords, authentication tokens, invitation secrets, or unnecessary sensitive student information.
+
+Audit logs should be append-only for normal application users.
+
+### S. `memorization_record_history`
+
+Purpose: Preserve changes to important educational records.
+
+Suggested fields:
+
+- `id`.
+- `organization_id`.
+- `memorization_record_id`.
+- `changed_by`.
+- `change_type`.
+- `reason`, optional.
+- `previous_values`, suitably restricted.
+- `new_values`, suitably restricted.
+- `created_at`.
+
+Use this or an equivalent auditable approach for significant record changes.
+
+## 19.2 Additional design requirements
+
+- Use foreign keys to preserve referential integrity.
+- Use indexes for common filters such as organization, student, class, teacher, date, and assignment status.
+- Add `created_at` and `updated_at` to mutable entities.
+- Use database constraints to enforce important invariants.
+- Avoid redundant data that can become inconsistent.
+- Document when soft deletion is appropriate.
+- Define retention and archival rules before implementing destructive operations.
+- Ensure historical records remain accessible to authorized users after transfers.
+- Use explicit transactions for operations that must succeed or fail together.
+- Do not use a single global `role` column on the user profile as the complete authorization model.
+
+Claude Code must review the proposed relationships and create a final ER diagram before implementing all features.
+
+---
+
+# 20. Security and Row Level Security
+
+Security is a release-blocking requirement.
+
+The application contains children's educational records and must be designed with privacy as a core concern.
+
+## 20.1 General security principles
+
+- Use Supabase Auth for authentication.
+- Use RLS for database access protection.
+- Use server-side authorization for sensitive operations.
+- Validate all input on the server.
+- Use parameterized queries and safe database APIs.
+- Never trust client-supplied roles.
+- Never trust client-supplied organization IDs without verifying membership.
+- Never expose privileged service-role keys to browsers.
+- Keep secrets out of source control.
+- Use secure production environment variables.
+- Apply rate limits to sensitive endpoints and invitation workflows.
+- Avoid exposing unnecessary data through errors.
+- Maintain an audit trail for sensitive operations.
+
+## 20.2 Row Level Security requirements
+
+Enable RLS on all tables accessible through client-facing database APIs.
+
+Policies must be designed around verified identities and authorized relationships.
+
+Examples:
+
+- A teacher can read students currently assigned to them within the relevant organization.
+- A parent can read only data for children linked through a verified, active relationship.
+- An organization administrator can manage only authorized data belonging to that organization.
+- A student can read only their own permitted records.
+- An unauthenticated user cannot read private student data.
+- A user cannot grant themselves organization membership or elevate their role.
+
+For operations requiring elevated server privileges, validate the user, organization, role, and record relationship before executing the operation.
+
+Do not assume that server-side code is automatically safe merely because it runs on the server.
+
+## 20.3 Cross-tenant protection
+
+Write explicit tests that attempt to:
+
+- Read another organization's students.
+- Modify another organization's records.
+- Assign a teacher from one organization to an unauthorized class in another.
+- Link a parent to an unauthorized student.
+- Guess student IDs and access private profiles.
+- Reuse expired invitations.
+- Accept revoked invitations.
+- Escalate an ordinary teacher account to administrator.
+- Access data after a membership or parent relationship has been revoked.
+
+All these attempts must be denied.
+
+## 20.4 Security-sensitive operations
+
+Implement secure workflows for:
+
+- Invitation creation and acceptance.
+- Organization membership changes.
+- Role changes.
+- Parent-child linking.
+- Student transfers.
+- Account deletion.
+- Data export.
+- Administrative corrections.
+
+Use transactions and appropriate audit records for multi-step operations.
+
+## 20.5 Privacy requirements
+
+Collect the minimum amount of personal information necessary.
+
+Provide a clear privacy policy describing:
+
+- What information is collected.
+- Why it is collected.
+- Who can access it.
+- How long it is retained.
+- How users can request correction or deletion.
+- How account deletion affects educational records.
+- How third-party services process data.
+
+Review applicable Canadian privacy requirements and any relevant requirements in other jurisdictions before launching.
+
+Do not assume that parental consent or child privacy requirements are identical in every country.
+
+---
+
+# 21. Notifications and Email
+
+Notifications should be implemented in stages.
+
+## 21.1 Initial release
+
+Start with in-app notifications for important events.
+
+Examples:
+
+- New assignment.
+- New memorization record.
+- Updated lesson feedback.
+- Invitation received.
+- Assignment due.
+
+## 21.2 Email notifications
+
+Add transactional email after the core workflows are reliable.
+
+Possible providers include Resend or another suitable transactional email service.
+
+Requirements:
+
+- Verified sending domain.
+- Secure invitation links.
+- Invitation expiry.
+- Clear sender identity.
+- Minimal sensitive information in emails.
+- Appropriate handling of delivery failures.
+- Rate limiting.
+- Notification preferences.
+- No unnecessary marketing emails.
+
+Do not add SMS in the initial version because it may introduce additional costs and operational complexity.
+
+---
+
+# 22. Future Monetization
+
+The initial release should be free for users.
+
+Do not make advertising a dependency of the core application's architecture.
+
+## 22.1 Possible future models
+
+- Non-intrusive website advertisements.
+- Sponsorship from appropriate organizations.
+- Optional donations.
+- Grants or community support.
+- Voluntary contributions to cover operating costs.
+
+## 22.2 Advertising policy
+
+Because the platform may serve children, advertising must be approached carefully.
+
+- Do not place advertisements inside memorization forms.
+- Do not allow advertisements to obscure educational content.
+- Do not use student educational records to target advertisements.
+- Do not sell student or parent information.
+- Do not enable behavioral advertising for children without appropriate legal and policy review.
+- Do not assume an advertising network will approve the site.
+- Do not load advertising scripts into authenticated student or parent areas until suitability and privacy have been reviewed.
+
+If advertising is introduced, prefer a controlled approach that preserves the educational experience and privacy of children.
+
+## 22.3 Architecture
+
+Keep monetization code separate from memorization, authentication, and authorization logic.
+
+The application must remain functional if all advertising scripts are blocked or unavailable.
+
+---
+
+# 23. Performance and Scalability
+
+The application should be designed for growth without unnecessary infrastructure.
+
+Initial design target:
+
+- Support a small pilot with a few organizations.
+- Remain responsive as the number of students and historical records increases.
+- Support several hundred organizations as a future design goal.
+- Avoid full-table scans for routine dashboards.
+- Use pagination for large tables.
+- Use appropriate indexes.
+- Avoid fetching all student records when only a summary is required.
+
+These are design goals, not guarantees of capacity. Actual performance depends on hosting, database sizing, query patterns, and workload.
+
+## 23.1 Data access
+
+- Fetch only the columns required.
+- Paginate student lists and lesson histories.
+- Apply filters on the server or database.
+- Avoid N+1 query patterns.
+- Use aggregation queries for dashboard statistics.
+- Add caching only when appropriate and safe.
+- Ensure cached responses cannot expose data across organizations or users.
+
+## 23.2 Reliability
+
+- Handle database and network failures.
+- Avoid duplicate records caused by repeated submissions.
+- Mosque internet is often weak. Keep an unsaved lesson form as a local draft on the device, show a clear "not saved yet" state, and retry when the connection returns.
+- Send an idempotency key with each lesson and assignment save so that retries never create duplicate records.
+- Full offline mode is a future enhancement, not part of the MVP.
+- Use idempotent operations where appropriate.
+- Use transactions for multi-step writes.
+- Provide clear error messages without exposing internal secrets.
+- Define backup and recovery procedures.
+- Test database migrations before production deployment.
+
+---
+
+# 24. Testing Strategy
+
+Testing is mandatory, not optional.
+
+## 24.1 Unit tests
+
+Test:
+
+- Quran reference validation.
+- Assignment status transitions.
+- Performance assessment validation.
+- Date and time handling.
+- Organization membership checks.
+- Role permission helpers.
+- Form validation.
+- Progress calculations.
+
+## 24.2 Integration tests
+
+Test:
+
+- Creating an organization.
+- Inviting a teacher.
+- Enrolling a student.
+- Linking a parent.
+- Recording memorization.
+- Creating assignments.
+- Completing revision.
+- Updating student enrollment.
+- Transferring a student between classes.
+- Revoking a parent relationship.
+- Archiving a class.
+
+## 24.3 Database security tests
+
+Test RLS directly, not only through the UI.
+
+Include:
+
+- Unauthorized SELECT operations.
+- Unauthorized INSERT operations.
+- Unauthorized UPDATE operations.
+- Unauthorized DELETE operations.
+- Cross-organization access attempts.
+- Access after relationship revocation.
+- Invitation token reuse.
+- Role escalation attempts.
+
+Use separate test identities representing different roles and organizations.
+
+## 24.4 End-to-end tests
+
+Use Playwright to verify key workflows in a browser.
+
+### Workflow A: Organization setup
+
+1. Register an organization administrator.
+2. Create an organization.
+3. Create a class.
+4. Invite a teacher.
+5. Verify that the teacher can join.
+
+### Workflow B: Memorization lesson
+
+1. Teacher logs in.
+2. Teacher opens an assigned student.
+3. Teacher records a passage.
+4. Teacher records performance.
+5. Teacher assigns the next passage.
+6. Teacher assigns revision.
+7. Teacher saves.
+8. The lesson and assignments appear correctly.
+
+### Workflow C: Parent access
+
+1. Parent receives an invitation.
+2. Parent creates or signs into an account.
+3. Parent accepts the invitation.
+4. Parent sees the linked child.
+5. Parent sees permitted progress.
+6. Parent cannot access an unrelated student.
+
+### Workflow D: Tenant isolation
+
+1. Create Organization A and Organization B.
+2. Add teachers and students to both.
+3. Attempt to access Organization B as a teacher from Organization A.
+4. Confirm that every unauthorized operation is denied.
+
+## 24.5 Definition of done
+
+A feature is not complete until:
+
+- Its validation is implemented.
+- Its authorization is verified.
+- Loading, empty, and error states exist.
+- Relevant tests pass.
+- The UI works on mobile.
+- Arabic and English layouts have been checked where relevant.
+- Documentation is updated.
+- No sensitive data is exposed through logs or responses.
+
+---
+
+# 25. Development Roadmap
+
+Build the platform incrementally. Do not ask Claude Code to generate the entire system in one unreviewed implementation.
+
+## Phase 0: Repository and architecture planning
+
+Tasks:
+
+1. Inspect the current repository.
+2. Identify existing files and dependencies.
+3. Confirm the required runtime and framework versions.
+4. Produce an implementation plan.
+5. Create architecture documentation.
+6. Create an entity relationship diagram.
+7. Define role and permission rules.
+8. Define RLS policies.
+9. Identify risks and unresolved decisions.
+
+Deliverables:
+
+- `docs/architecture.md`
+- `docs/database.md`
+- `docs/security.md`
+- `docs/implementation-plan.md`
+- Initial ER diagram.
+
+Do not begin large-scale feature implementation until the architecture and security design have been reviewed.
+
+## Phase 1: Project foundation
+
+Tasks:
+
+- Initialize Next.js and TypeScript.
+- Configure Tailwind CSS and shadcn/ui.
+- Configure ESLint and Prettier.
+- Set up environment variable validation.
+- Configure Supabase clients correctly for server and browser usage.
+- Create development and test environments.
+- Set up GitHub version control.
+- Add initial automated checks.
+
+Deliverables:
+
+- Running application.
+- Working development instructions.
+- `.env.example` without real secrets.
+- CI checks for linting, type checking, and tests.
+
+## Phase 2: Database and security foundation
+
+Tasks:
+
+- Create the initial migrations.
+- Create organization and membership tables.
+- Create class and student tables.
+- Add relationship constraints.
+- Implement RLS policies.
+- Add test fixtures.
+- Test cross-organization isolation.
+- Document how migrations are applied.
+
+Deliverables:
+
+- Version-controlled schema.
+- Initial ER diagram.
+- Tested organization isolation.
+- Documented authorization model.
+
+Do not continue to complex business workflows if tenant isolation is not working.
+
+## Phase 3: Authentication and onboarding
+
+Tasks:
+
+- Registration.
+- Login and logout.
+- Email verification.
+- Password reset.
+- Protected routes.
+- Organization creation.
+- Membership management.
+- Invitation workflows.
+- Role-based dashboard routing.
+
+Deliverables:
+
+- Secure login.
+- Organization administrator onboarding.
+- Teacher invitation and acceptance.
+- Parent invitation foundations.
+
+## Phase 4: Organization and class management
+
+Tasks:
+
+- Organization settings.
+- Teacher list.
+- Teacher invitation management.
+- Class creation and editing.
+- Teacher assignment.
+- Student enrollment.
+- Class roster.
+- Archive workflows.
+
+Deliverables:
+
+- Functional administrator dashboard.
+- Working teacher and class management.
+
+## Phase 5: Student profiles and Quran metadata
+
+Tasks:
+
+- Student profile.
+- Quran metadata import or seed process.
+- Surah and ayah selectors.
+- Reference validation.
+- Enrollment history.
+- Teacher-student relationships.
+
+Deliverables:
+
+- Functional student profile.
+- Reliable Quran reference selection.
+- Tested enrollment and assignment logic.
+
+## Phase 6: Memorization and revision
+
+Tasks:
+
+- Record memorization.
+- Record assessments.
+- Add teacher feedback.
+- Create new memorization assignments.
+- Create revision assignments.
+- Track status transitions.
+- Suggest the next passage.
+- Preserve history.
+- Implement corrections and audit trails.
+
+Deliverables:
+
+- Complete core teacher workflow.
+- Correct distinction between student-reported and teacher-verified progress.
+
+This phase is the highest product priority.
+
+## Phase 7: Parent portal
+
+Tasks:
+
+- Parent dashboard.
+- Multiple children.
+- Invitation acceptance.
+- Parent-child relationship verification.
+- Memorization history.
+- Upcoming assignments.
+- Revision tasks.
+- Parent-visible feedback.
+- Privacy and authorization tests.
+
+Deliverables:
+
+- Functional parent portal.
+- Verified isolation between families.
+
+## Phase 8: Student portal
+
+Tasks:
+
+- Student login, if enabled.
+- Assignment overview.
+- Personal progress.
+- Practice status.
+- Teacher feedback.
+- Age-appropriate interface.
+
+Deliverables:
+
+- Optional student experience without compromising teacher verification.
+
+## Phase 9: Attendance and reporting
+
+Tasks:
+
+- Attendance sessions.
+- Attendance records.
+- Teacher reports.
+- Organization statistics.
+- Parent attendance views.
+- Pagination and filters.
+- Authorized CSV exports.
+
+Deliverables:
+
+- Operational reports.
+- Accurate, permission-aware statistics.
+
+## Phase 10: Notifications
+
+Tasks:
+
+- In-app notifications.
+- Notification preferences.
+- Email provider integration.
+- Invitation emails.
+- Assignment notifications.
+- Failure handling and rate limits.
+
+Deliverables:
+
+- Reliable notifications with minimal exposure of sensitive information.
+
+## Phase 11: Localization and quality
+
+Tasks:
+
+- Complete Arabic translations.
+- Complete English translations.
+- Validate RTL and LTR layouts.
+- Improve accessibility.
+- Test mobile workflows.
+- Add missing loading and error states.
+- Optimize slow queries.
+- Perform a security review.
+
+Deliverables:
+
+- Production-quality interface.
+- Verified Arabic and English experiences.
+
+## Phase 12: Pilot launch
+
+Start with one real Quran class or a small number of organizations.
+
+Measure:
+
+- Teacher onboarding time.
+- Time to record a lesson.
+- Parent activation.
+- Errors and support requests.
+- Actual use of revision assignments.
+- Reliability.
+- Operating costs.
+
+Collect feedback before expanding.
+
+## Phase 13: Future enhancements
+
+Consider these only after the core product has been validated:
+
+- More advanced revision recommendations.
+- Configurable organization settings.
+- Additional reporting.
+- Carefully controlled advertising.
+- Sponsorship management.
+- Donation options.
+- PWA installation.
+- Push notifications.
+- Optional audio recitation recording.
+- A separate mobile application if justified.
+- Importing existing student records.
+- Advanced analytics.
+
+Do not build all future enhancements in the first release.
+
+---
+
+# 26. Minimum Viable Product (MVP)
+
+The MVP should contain only the functionality necessary to test the product with real users.
+
+## 26.1 Pilot slice (build first)
+
+Before the full MVP, build and test the smallest useful version with one real teacher:
+
+- One organization, with the creator acting as administrator and teacher.
+- One class.
+- Add students (no student accounts).
+- Quran passage selection by ayah, page, or juz.
+- Record a memorization lesson with performance and feedback.
+- Create memorization and revision assignments.
+- Student history.
+- Parent view of one child's progress, invited through a shareable link (WhatsApp/QR).
+- Arabic interface first; English can follow.
+- RLS, tenant isolation, and tests for these workflows.
+
+Use the pilot to measure lesson-recording time and parent activation before building the rest.
+
+## 26.2 Release 1 — Must have
+
+- Secure authentication.
+- Organization creation.
+- Organization-scoped memberships.
+- Administrator dashboard.
+- Teacher invitations.
+- Class management.
+- Student enrollment.
+- Teacher-student assignments.
+- Quran surah and ayah selection.
+- Memorization recording.
+- Performance assessments.
+- New memorization assignments.
+- Revision assignments.
+- Student history.
+- Parent invitations.
+- Parent-child relationships.
+- Parent progress dashboard.
+- Arabic and English support.
+- Responsive layout.
+- RLS and server-side authorization.
+- Automated tests for important workflows.
+
+## 26.3 Can wait
+
+- Full offline mode.
+- Additional riwayat and Mushaf layouts beyond Hafs / Madani 604-page.
+- Public leaderboards.
+- Gamification.
+- Artificial intelligence.
+- Audio recording and speech recognition.
+- SMS.
+- Paid subscription management.
+- Complex scheduling.
+- Mobile applications.
+- Advanced analytics.
+- Advertising.
+- Extensive platform-wide administration.
+
+The MVP is successful when a real teacher can manage lessons and parents can securely follow progress.
+
+---
+
+# 27. Operational and Deployment Requirements
+
+## 27.1 Environments
+
+Maintain separate environments for:
+
+- Local development.
+- Testing or staging.
+- Production.
+
+Use separate database projects or appropriately isolated environments.
+
+Never run experimental destructive migrations against production.
+
+## 27.2 Environment variables
+
+Provide an `.env.example` containing variable names and descriptions only.
+
+Expected variables may include:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` or the currently recommended publishable-key equivalent
+- `SUPABASE_SERVICE_ROLE_KEY`, only if a privileged server-side workflow genuinely requires it
+- Email provider credentials, when email is introduced
+- Monitoring configuration, when monitoring is introduced
+
+Use current Supabase naming and security guidance when implementing.
+
+The service-role key must never be exposed to the browser or committed to source control.
+
+## 27.3 Database migrations
+
+- Store every schema change in source control.
+- Test migrations in development and staging.
+- Use reviewed migrations for production.
+- Back up production data before risky changes.
+- Document recovery procedures.
+- Do not modify production tables manually without recording the change.
+
+## 27.4 Backups and recovery
+
+Before launching real student records:
+
+- Configure suitable database backups.
+- Understand the selected hosting plan's backup and recovery capabilities.
+- Document how to restore data.
+- Test a restoration procedure.
+- Define acceptable recovery time and data loss objectives based on actual needs.
+
+Do not assume that the lowest-cost hosting plan includes every backup feature required.
+
+## 27.5 Cost management
+
+The project should minimize recurring expenses.
+
+Start with free or low-cost hosting tiers where appropriate, but verify current limits and terms.
+
+Monitor:
+
+- Database size.
+- Database compute.
+- Bandwidth.
+- Email volume.
+- Storage.
+- Build and hosting usage.
+- Monitoring usage.
+
+Do not promise permanent zero operating cost. Free tiers may change, and production reliability may require paid resources.
+
+---
+
+# 28. Important Product Decisions and Rules
+
+Implement the following rules consistently:
+
+1. A parent account is optional.
+2. A student can have multiple authorized parents or guardians.
+3. A parent can have multiple linked children.
+4. A teacher can belong to multiple organizations.
+5. A teacher can teach multiple classes.
+6. A class can have multiple teachers if authorized.
+7. A student can move between classes without losing history.
+8. Historical records retain their original creator and timestamps.
+9. New memorization and revision are separate concepts.
+10. Student-reported completion is different from teacher verification.
+11. The teacher controls the final memorization assessment.
+12. Organization isolation is enforced at the database and server levels.
+13. Parent access requires a verified relationship.
+14. Role changes and sensitive corrections are auditable.
+15. Quran references are validated against canonical metadata.
+16. No public page exposes private student records.
+17. No advertising feature may depend on access to student educational records.
+18. The system must remain useful without a student account.
+19. The system must remain functional if notifications fail.
+20. All important workflows must be testable.
+
+---
+
+# 29. Instructions for Claude Code
+
+You are the senior software engineer responsible for implementing this project.
+
+Treat this document as the initial product specification, not as permission to generate the entire application in one pass.
+
+## 29.1 Before writing code
+
+1. Inspect the repository and determine whether an application already exists.
+2. Do not overwrite or delete existing work without understanding it.
+3. Identify missing requirements and technical risks.
+4. Propose a phased implementation plan.
+5. Define the final database relationships.
+6. Produce an ER diagram.
+7. Define organization and role permissions.
+8. Design RLS policies and tests.
+9. Document assumptions.
+10. Ask questions only when a missing decision materially affects architecture, security, or behavior. Otherwise, make a reasonable documented choice.
+
+## 29.2 Implementation rules
+
+- Use Next.js App Router, React, and strict TypeScript.
+- Use Supabase PostgreSQL and Supabase Auth.
+- Use Tailwind CSS and shadcn/ui.
+- Use server-side authorization for sensitive operations.
+- Enforce database-level access rules.
+- Use migrations for all schema changes.
+- Validate input on the server.
+- Use reusable components and modular business logic.
+- Keep dependencies minimal.
+- Follow current stable documentation.
+- Do not invent APIs or use deprecated patterns without justification.
+- Do not hardcode credentials.
+- Do not expose privileged keys.
+- Do not rely on frontend-only role checks.
+- Do not create placeholder security policies that permit unrestricted access.
+- Do not use mock data in production workflows.
+- Do not silently ignore errors.
+- Do not create features that are outside the current phase unless required by an architectural dependency.
+
+## 29.3 Work in small phases
+
+For each phase:
+
+1. State the intended scope.
+2. Identify the relevant files and migrations.
+3. Implement the smallest coherent change.
+4. Run TypeScript checks.
+5. Run linting.
+6. Run relevant tests.
+7. Review authorization implications.
+8. Summarize the changes.
+9. Document anything unfinished.
+10. Recommend the next phase.
+
+Do not claim a test passed unless it was actually executed successfully.
+
+If a required external service is unavailable, explain what could not be verified.
+
+## 29.4 Database and security rules
+
+Before building business features:
+
+- Create and test the initial schema.
+- Implement RLS.
+- Verify tenant isolation.
+- Verify parent-child authorization.
+- Verify teacher-student authorization.
+- Verify role restrictions.
+- Test unauthorized access directly against the database API.
+- Review how server-side code obtains database clients and user identity.
+
+Every feature that accesses private records must have an explicit authorization rule.
+
+## 29.5 UI implementation rules
+
+- Use consistent design tokens.
+- Use shadcn/ui components where appropriate.
+- Support Arabic RTL and English LTR.
+- Build responsive layouts.
+- Include loading, error, and empty states.
+- Use accessible forms and dialogs.
+- Avoid unnecessary animations.
+- Keep teacher workflows fast.
+- Ensure mobile usability.
+- Separate teacher-only notes from parent-visible feedback.
+
+## 29.6 Completion criteria
+
+A feature is complete only when:
+
+- Its behavior matches the specification.
+- Authorization has been implemented and tested.
+- Validation exists.
+- Errors are handled.
+- Relevant tests pass.
+- The interface is responsive.
+- Documentation is updated.
+- No known critical security issue remains.
+
+If a requirement conflicts with the current framework or service capabilities, explain the issue and propose the safest practical alternative before making a major architectural change.
+
+---
+
+# 30. Final Deliverables
+
+The completed project should include:
+
+1. Working Next.js application.
+2. Responsive Arabic and English interfaces.
+3. Organization administrator dashboard.
+4. Teacher dashboard.
+5. Optional student portal.
+6. Parent portal.
+7. Secure authentication.
+8. Organization membership management.
+9. Class and student management.
+10. Quran metadata and passage selection.
+11. Memorization recording and assessment.
+12. New memorization assignments.
+13. Revision assignments.
+14. Student history and progress reports.
+15. Parent invitations and verified relationships.
+16. Attendance, if included in the implemented scope.
+17. Database migrations.
+18. RLS policies.
+19. Automated tests.
+20. Environment variable documentation.
+21. Local development instructions.
+22. Deployment instructions.
+23. Backup and recovery guidance.
+24. Security documentation.
+25. Architecture and database diagrams.
+26. A list of known limitations and deferred features.
+
+---
+
+# 31. Immediate Next Action
+
+Start with Phase 0 and Phase 1 only.
+
+First inspect the repository, review the current official documentation for Next.js and Supabase, and produce the architecture, ER diagram, permission matrix, migration plan, and security test plan.
+
+Do not immediately generate every dashboard or database table.
+
+After the architecture is reviewed, implement the project foundation and the smallest secure vertical slice (this matches the Pilot slice in Section 26.1):
+
+1. Register an organization administrator.
+2. Create an organization.
+3. Invite a teacher.
+4. Create a class.
+5. Enroll a student.
+6. Record a memorization lesson.
+7. Create a revision assignment.
+8. Link a parent.
+9. Allow the parent to view only that child's permitted progress.
+10. Verify that users from another organization cannot access any of these records.
+
+Once this workflow works securely from end to end, continue with the remaining phases.
+
+**The primary engineering priority is correctness and privacy, followed by usability, then expansion.**

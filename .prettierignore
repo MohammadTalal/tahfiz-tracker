@@ -1,0 +1,10 @@
+.next
+node_modules
+package-lock.json
+supabase/.temp
+src/components/ui
+playwright-report
+test-results
+PRD.txt
+src/types/database.ts
+src/lib/quran/surah-names.ts
