@@ -116,6 +116,24 @@ export async function acceptInvite(token: string): Promise<{ error: string } | u
   return redirect({ href: `/o/${result.organization_id}`, locale });
 }
 
+/** Marks an open assignment as verified. RLS limits this to the student's teachers and admins. */
+export async function completeAssignment(assignmentId: string): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(assignmentId).success) return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { data, error } = await ctx.supabase
+    .from("assignments")
+    .update({ status: "teacher_verified" })
+    .eq("id", assignmentId)
+    .in("status", ["assigned", "in_progress", "student_reported", "needs_practice"])
+    .select("id");
+  if (error) return { error: "generic" };
+  if (data.length === 0) return { error: "not_allowed" };
+
+  refresh();
+}
+
 export type RecordLessonResult =
   { ok: true; recordId: string } | { ok: false; error: string; fieldErrors?: Record<string, string> };
 

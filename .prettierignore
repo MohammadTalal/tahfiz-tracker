@@ -8,3 +8,4 @@ test-results
 PRD.txt
 src/types/database.ts
 src/lib/quran/surah-names.ts
+src/lib/quran/divisions-data.ts

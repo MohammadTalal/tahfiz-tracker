@@ -99,7 +99,10 @@
     "addClass": "إضافة حلقة",
     "students": "{count, plural, =0 {لا طلاب} one {طالب واحد} two {طالبان} few {# طلاب} many {# طالبًا} other {# طالب}}",
     "teachers": "المعلمون",
-    "inviteTeacher": "دعوة معلم"
+    "inviteTeacher": "دعوة معلم",
+    "data": "البيانات",
+    "exportLessons": "تنزيل كل الدروس (CSV)",
+    "exportHelp": "جدول بكل دروس هذه الجهة، بما فيها ملاحظات المعلمين. احفظه في مكان خاص."
   },
   "Class": {
     "roster": "الطلاب",
@@ -130,7 +133,8 @@
     "status_cancelled": "ملغى",
     "parent_pending": "قيد الانتظار",
     "parent_verified": "مرتبط",
-    "parent_revoked": "أُزيل"
+    "parent_revoked": "أُزيل",
+    "markDone": "تم"
   },
   "Lesson": {
     "title": "تسجيل درس — {name}",
@@ -158,7 +162,15 @@
     "suggested": "مقترح بناءً على الدرس السابق — عدّله إن لزم.",
     "fromAssignment": "مأخوذ من المهمة الحالية.",
     "selectSurah": "اختر سورة",
-    "searchSurah": "ابحث عن سورة"
+    "searchSurah": "ابحث عن سورة",
+    "pickBy": "الاختيار حسب",
+    "by_surah": "سورة",
+    "by_page": "صفحة",
+    "by_juz": "جزء",
+    "fromPage": "من صفحة",
+    "toPage": "إلى صفحة",
+    "fromJuz": "من جزء",
+    "toJuz": "إلى جزء"
   },
   "Rating": {
     "excellent": "ممتاز",
@@ -186,7 +198,10 @@
     "acceptHelp": "سجّل الدخول أو أنشئ حسابًا لقبول الدعوة.",
     "accept": "قبول الدعوة",
     "accepted": "تم قبول الدعوة.",
-    "invalid": "هذه الدعوة غير صالحة أو منتهية أو مستخدمة. اطلب رابطًا جديدًا."
+    "invalid": "هذه الدعوة غير صالحة أو منتهية أو مستخدمة. اطلب رابطًا جديدًا.",
+    "qr": "رمز QR",
+    "qrAlt": "رمز QR لرابط الدعوة",
+    "qrHelp": "اطلب منه مسح الرمز بكاميرا هاتفه."
   },
   "Parent": {
     "progress": "التقدّم",
@@ -206,5 +221,15 @@
     "contactHeading": "تواصل معنا",
     "contactEmail": "لأسئلة الخصوصية أو الطلبات، راسلنا على <link>{email}</link>.",
     "contactPending": "لأسئلة الخصوصية أو الطلبات، تواصل مع مشرف جهتك. وسنضيف عنوان تواصل مباشر هنا قريبًا."
+  },
+  "Export": {
+    "date": "التاريخ",
+    "student": "الطالب",
+    "passage": "المقطع",
+    "rating": "التقييم",
+    "mistakes": "الأخطاء",
+    "parentFeedback": "ملاحظات لولي الأمر",
+    "privateNote": "ملاحظة المعلم",
+    "teacher": "المعلم"
   }
 }

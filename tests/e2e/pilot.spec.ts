@@ -79,11 +79,39 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await expect(page.getByText("الملك ١١–١٥")).toBeVisible(); // new assignment
   });
 
+  await test.step("picks a passage by page", async () => {
+    await page.getByRole("link", { name: "تسجيل درس" }).click();
+    await page.getByRole("radio", { name: "صفحة" }).first().click();
+    await page.getByLabel("من صفحة").fill("562");
+    await expect(page.getByText(/^= الملك ١–/)).toBeVisible();
+    await page.getByRole("radio", { name: "سورة" }).first().click();
+    await expect(page.getByLabel("السورة", { exact: true }).first()).toHaveValue("67");
+    await page.goto(studentUrl);
+  });
+
+  await test.step("marks an assignment as done", async () => {
+    const item = page.getByRole("main").getByRole("listitem").filter({ hasText: "الملك ١١–١٥" });
+    await item.getByRole("button", { name: "تم" }).click();
+    await expect(item).toHaveCount(0);
+  });
+
+  await test.step("admin downloads lessons as CSV", async () => {
+    const orgId = new URL(studentUrl).pathname.split("/")[3];
+    const response = await page.request.get(`/api/orgs/${orgId}/lessons-csv?locale=ar`);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("text/csv");
+    const csv = await response.text();
+    expect(csv).toContain("الملك ١–٥");
+    expect(csv).toContain("ملاحظة سرية للمعلم");
+  });
+
   await test.step("invites a parent with a share link", async () => {
     await page.getByRole("button", { name: "دعوة ولي أمر" }).click();
     const link = page.getByRole("textbox", { name: "دعوة ولي أمر" });
     await expect(link).toHaveValue(/\/ar\/invite\/[0-9a-f]{64}$/);
     inviteUrl = await link.inputValue();
+    await page.getByRole("button", { name: "رمز QR" }).click();
+    await expect(page.getByRole("img", { name: "رمز QR لرابط الدعوة" })).toBeVisible();
     await expect(page.getByRole("link", { name: "مشاركة عبر واتساب" })).toHaveAttribute(
       "href",
       /^https:\/\/wa\.me\/\?text=/,
@@ -146,4 +174,21 @@ test("seeded student page shows lessons and dated assignments", async ({ page })
   await expect(main.getByRole("heading", { level: 1, name: "أحمد" })).toBeVisible();
   await expect(main.getByText(/الموعد/).first()).toBeVisible();
   await expect(main.getByText("النبإ ١ – الناس ٦")).toBeVisible(); // cross-surah revision (Tanzil spelling)
+});
+
+test("a teacher adds a student to their own class but cannot export", async ({ page }) => {
+  // Uses supabase/seed.sql: teacher@demo.local teaches "حلقة ب" and is not an admin.
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("teacher@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000002");
+  const name = `طالب ${Date.now()}`;
+  await page.getByLabel("اسم الطالب").fill(name);
+  await page.getByRole("button", { name: "إضافة", exact: true }).click();
+  await expect(page.getByRole("link", { name })).toBeVisible();
+
+  const response = await page.request.get("/api/orgs/d1000000-0000-0000-0000-000000000001/lessons-csv");
+  expect(response.status()).toBe(403);
 });

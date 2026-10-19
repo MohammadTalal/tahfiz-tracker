@@ -99,7 +99,10 @@
     "addClass": "Add class",
     "students": "{count, plural, =0 {No students} one {# student} other {# students}}",
     "teachers": "Teachers",
-    "inviteTeacher": "Invite a teacher"
+    "inviteTeacher": "Invite a teacher",
+    "data": "Data",
+    "exportLessons": "Download all lessons (CSV)",
+    "exportHelp": "A spreadsheet of every lesson in this organization, including teacher notes. Keep it private."
   },
   "Class": {
     "roster": "Students",
@@ -130,7 +133,8 @@
     "status_cancelled": "Cancelled",
     "parent_pending": "Pending",
     "parent_verified": "Linked",
-    "parent_revoked": "Removed"
+    "parent_revoked": "Removed",
+    "markDone": "Done"
   },
   "Lesson": {
     "title": "Record lesson — {name}",
@@ -158,7 +162,15 @@
     "suggested": "Suggested from the last lesson — change it if needed.",
     "fromAssignment": "Filled from the current assignment.",
     "selectSurah": "Choose a surah",
-    "searchSurah": "Search surah"
+    "searchSurah": "Search surah",
+    "pickBy": "Choose by",
+    "by_surah": "Surah",
+    "by_page": "Page",
+    "by_juz": "Juz",
+    "fromPage": "From page",
+    "toPage": "To page",
+    "fromJuz": "From juz",
+    "toJuz": "To juz"
   },
   "Rating": {
     "excellent": "Excellent",
@@ -186,7 +198,10 @@
     "acceptHelp": "Log in or create an account to accept this invitation.",
     "accept": "Accept invitation",
     "accepted": "Invitation accepted.",
-    "invalid": "This invitation is invalid, expired or already used. Ask for a new link."
+    "invalid": "This invitation is invalid, expired or already used. Ask for a new link.",
+    "qr": "QR code",
+    "qrAlt": "QR code for the invitation link",
+    "qrHelp": "Ask them to scan this with their phone camera."
   },
   "Parent": {
     "progress": "Progress",
@@ -206,5 +221,15 @@
     "contactHeading": "Contact us",
     "contactEmail": "For privacy questions or requests, email <link>{email}</link>.",
     "contactPending": "For privacy questions or requests, contact your organization’s administrator. A direct contact address will be added here soon."
+  },
+  "Export": {
+    "date": "Date",
+    "student": "Student",
+    "passage": "Passage",
+    "rating": "Rating",
+    "mistakes": "Mistakes",
+    "parentFeedback": "Feedback for parents",
+    "privateNote": "Teacher note",
+    "teacher": "Teacher"
   }
 }

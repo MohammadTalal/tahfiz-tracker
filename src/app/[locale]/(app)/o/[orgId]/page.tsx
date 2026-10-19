@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createClass } from "@/features/workspace/actions";
@@ -60,6 +60,20 @@ export default async function OrganizationPage({ params }: PageProps<"/[locale]/
       {org.isAdmin && (
         <Section title={t("teachers")}>
           <InvitePanel orgId={orgId} type="teacher" label={t("inviteTeacher")} />
+        </Section>
+      )}
+
+      {org.isAdmin && (
+        <Section title={t("data")}>
+          <p className="text-muted-foreground text-sm">{t("exportHelp")}</p>
+          <a
+            href={`/api/orgs/${orgId}/lessons-csv?locale=${locale}`}
+            download
+            className="text-primary flex items-center gap-2 self-start text-sm font-medium underline-offset-4 hover:underline"
+          >
+            <Download className="size-4" aria-hidden />
+            {t("exportLessons")}
+          </a>
         </Section>
       )}
     </>

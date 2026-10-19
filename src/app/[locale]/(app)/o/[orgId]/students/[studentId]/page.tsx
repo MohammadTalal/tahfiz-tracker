@@ -48,7 +48,7 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
       </div>
 
       <Section title={t("openAssignments")}>
-        <AssignmentList assignments={assignments} />
+        <AssignmentList assignments={assignments} canComplete />
       </Section>
 
       <Section title={t("history")}>

@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { ayahCount } from "@/lib/quran/ayah-counts";
 import { formatPassage, passageFromRow, type QuranLocale } from "@/lib/quran/format";
 import type { Database } from "@/types/database";
+import { CompleteAssignmentButton } from "./complete-assignment-button";
 
 type Rating = Database["public"]["Enums"]["performance_rating"];
 type PassageRow = { start_surah: number; start_ayah: number; end_surah: number; end_ayah: number };
@@ -101,7 +102,14 @@ export type AssignmentItem = PassageRow & {
   due_date: string | null;
 };
 
-export function AssignmentList({ assignments }: { assignments: AssignmentItem[] }) {
+/** Open assignments. `canComplete` (staff only) adds a "done" button to each. */
+export function AssignmentList({
+  assignments,
+  canComplete = false,
+}: {
+  assignments: AssignmentItem[];
+  canComplete?: boolean;
+}) {
   const t = useTranslations("Student");
   const format = useFormatter();
   const locale = useLocale();
@@ -117,13 +125,16 @@ export function AssignmentList({ assignments }: { assignments: AssignmentItem[] 
             <PassageLabel row={a} />
           </span>
           {a.status !== "assigned" && <Badge variant="outline">{t(`status_${a.status}`)}</Badge>}
-          {a.due_date && (
-            <span className="text-muted-foreground ms-auto text-sm">
-              {t("due", {
-                date: format.dateTime(dayAsUtc(a.due_date), dayFormat(locale)),
-              })}
-            </span>
-          )}
+          <span className="ms-auto flex items-center gap-3">
+            {a.due_date && (
+              <span className="text-muted-foreground text-sm">
+                {t("due", {
+                  date: format.dateTime(dayAsUtc(a.due_date), dayFormat(locale)),
+                })}
+              </span>
+            )}
+            {canComplete && <CompleteAssignmentButton assignmentId={a.id} />}
+          </span>
         </li>
       ))}
     </ul>

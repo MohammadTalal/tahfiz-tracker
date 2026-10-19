@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Copy, Share2, UserPlus } from "lucide-react";
+import { Check, Copy, QrCode, Share2, UserPlus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import QRCode from "qrcode";
 import { useState, useTransition } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export function InvitePanel({
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
 
   function create() {
     setError(null);
@@ -87,6 +89,17 @@ export function InvitePanel({
         >
           {t("whatsapp")}
         </a>
+        <Button
+          variant="outline"
+          aria-expanded={qrSvg !== null}
+          onClick={async () => {
+            if (qrSvg) return setQrSvg(null);
+            setQrSvg(await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" }));
+          }}
+        >
+          <QrCode className="size-4" aria-hidden />
+          {t("qr")}
+        </Button>
         {canShare && (
           <Button variant="outline" onClick={() => navigator.share({ text: message }).catch(() => {})}>
             <Share2 className="size-4" aria-hidden />
@@ -94,6 +107,17 @@ export function InvitePanel({
           </Button>
         )}
       </div>
+      {qrSvg && (
+        <div className="flex flex-col items-center gap-2 py-2">
+          {/* eslint-disable-next-line @next/next/no-img-element -- generated inline SVG */}
+          <img
+            src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvg)}`}
+            alt={t("qrAlt")}
+            className="size-56 rounded-md bg-white p-2"
+          />
+          <p className="text-muted-foreground text-center text-sm">{t("qrHelp")}</p>
+        </div>
+      )}
     </div>
   );
 }

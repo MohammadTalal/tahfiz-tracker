@@ -84,10 +84,15 @@ export async function getClasses(orgId: string, userId: string, isAdmin: boolean
     .filter((c) => isAdmin || c.taughtByMe);
 }
 
-export async function getClassWithRoster(orgId: string, classId: string) {
+export async function getClassWithRoster(orgId: string, classId: string, userId: string) {
   const supabase = await createClient();
   const [cls, roster] = await Promise.all([
-    supabase.from("classes").select("id, name").eq("id", classId).eq("organization_id", orgId).maybeSingle(),
+    supabase
+      .from("classes")
+      .select("id, name, class_teachers(teacher_user_id)")
+      .eq("id", classId)
+      .eq("organization_id", orgId)
+      .maybeSingle(),
     supabase
       .from("class_enrollments")
       .select("students(id, display_name)")
@@ -100,7 +105,8 @@ export async function getClassWithRoster(orgId: string, classId: string) {
   const students = roster.data
     .flatMap((r) => (r.students ? [r.students] : []))
     .sort((a, b) => a.display_name.localeCompare(b.display_name));
-  return { ...cls.data, students };
+  const { class_teachers: teachers, ...rest } = cls.data;
+  return { ...rest, students, taughtByMe: teachers.some((t) => t.teacher_user_id === userId) };
 }
 
 /** A student the user may see (RLS decides), or null. */

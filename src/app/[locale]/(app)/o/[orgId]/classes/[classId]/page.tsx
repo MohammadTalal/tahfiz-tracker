@@ -17,7 +17,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
   const user = await requireUser();
   const org = await getOrganizationForStaff(orgId, user.id);
   if (!org) notFound();
-  const cls = await getClassWithRoster(orgId, classId);
+  const cls = await getClassWithRoster(orgId, classId, user.id);
   if (!cls) notFound();
 
   const t = await getTranslations("Class");
@@ -48,7 +48,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
             ))}
           </ul>
         )}
-        {org.isAdmin && (
+        {(org.isAdmin || cls.taughtByMe) && (
           <NameForm
             action={enrollStudent.bind(null, classId)}
             label={t("studentName")}
