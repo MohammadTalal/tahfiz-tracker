@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { AssignmentList, BackLink, LessonList, Section } from "@/features/workspace/components/display";
 import { InvitePanel } from "@/features/workspace/components/invite-panel";
 import {
@@ -39,7 +40,7 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
         <h1 className="text-2xl font-bold">{student.display_name}</h1>
         <Link
           href={`/o/${orgId}/students/${studentId}/record`}
-          className={buttonVariants({ size: "lg", className: "h-12 text-base sm:self-start" })}
+          className={cn(buttonVariants({ size: "lg", className: "h-12 text-base sm:self-start" }))}
         >
           <PenLine className="size-4" aria-hidden />
           {t("recordLesson")}

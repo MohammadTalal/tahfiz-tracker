@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { TextField } from "@/components/forms/field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { Link } from "@/i18n/navigation";
 import { idleState } from "@/lib/action-state";
 import { forgotPassword, login, resetPassword, signup } from "./actions";
 
@@ -73,6 +74,20 @@ export function SignupForm({ next }: { next?: string }) {
         minLength={8}
         error={state.fieldErrors?.password}
       />
+      <p className="text-muted-foreground text-sm">
+        {t.rich("agreement", {
+          terms: (chunks) => (
+            <Link href="/terms" className="text-primary underline-offset-4 hover:underline">
+              {chunks}
+            </Link>
+          ),
+          privacy: (chunks) => (
+            <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
       <SubmitButton size="lg">{t("signupButton")}</SubmitButton>
     </form>
   );

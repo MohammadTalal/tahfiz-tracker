@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AuthCard } from "@/components/layout/auth-card";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { AcceptInviteForm } from "@/features/workspace/components/accept-invite-form";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -23,12 +24,15 @@ export default async function InvitePage({ params }: PageProps<"/[locale]/invite
           <AcceptInviteForm token={token} />
         ) : (
           <div className="flex flex-col gap-2">
-            <Link href={{ pathname: "/signup", query: { next } }} className={buttonVariants({ size: "lg" })}>
+            <Link
+              href={{ pathname: "/signup", query: { next } }}
+              className={cn(buttonVariants({ size: "lg" }))}
+            >
               {ta("signupButton")}
             </Link>
             <Link
               href={{ pathname: "/login", query: { next } }}
-              className={buttonVariants({ size: "lg", variant: "outline" })}
+              className={cn(buttonVariants({ size: "lg", variant: "outline" }))}
             >
               {ta("loginButton")}
             </Link>

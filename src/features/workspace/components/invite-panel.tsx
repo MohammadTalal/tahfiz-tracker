@@ -4,6 +4,7 @@ import { Check, Copy, Share2, UserPlus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { createInvite } from "../actions";
 
@@ -82,7 +83,7 @@ export function InvitePanel({
           href={`https://wa.me/?text=${encodeURIComponent(message)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className={buttonVariants({ variant: "default" })}
+          className={cn(buttonVariants({ variant: "default" }))}
         >
           {t("whatsapp")}
         </a>

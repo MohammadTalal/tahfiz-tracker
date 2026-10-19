@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 
@@ -19,15 +20,14 @@ export default function HomePage({ params }: PageProps<"/[locale]">) {
           <h1 className="text-3xl font-bold sm:text-4xl">{t("title")}</h1>
           <p className="text-muted-foreground max-w-xl text-lg">{t("subtitle")}</p>
           <div className="flex gap-3">
-            <Link href="/signup" className={buttonVariants({ size: "lg" })}>
+            <Link href="/signup" className={cn(buttonVariants({ size: "lg" }))}>
               {t("getStarted")}
             </Link>
-            <Link href="/login" className={buttonVariants({ size: "lg", variant: "outline" })}>
+            <Link href="/login" className={cn(buttonVariants({ size: "lg", variant: "outline" }))}>
               {t("login")}
             </Link>
           </div>
         </section>
-        <footer className="text-muted-foreground pt-8 text-center text-xs">{t("attribution")}</footer>
       </main>
     </>
   );

@@ -7,8 +7,7 @@
     "title": "Quran Learning Platform",
     "subtitle": "Record your students' memorization and revision in seconds, and let parents follow their progress.",
     "getStarted": "Get started",
-    "login": "Log in",
-    "attribution": "Quran metadata from Tanzil.net (CC BY 3.0)."
+    "login": "Log in"
   },
   "LanguageSwitcher": {
     "label": "Language",
@@ -62,7 +61,8 @@
     "resetButton": "Save password",
     "checkEmail": "Check your email to confirm your account, then log in.",
     "linkInvalid": "That link is invalid or has expired. Please try again.",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "agreement": "By creating an account, you agree to the <terms>Terms of Service</terms> and the <privacy>Privacy Policy</privacy>."
   },
   "Nav": {
     "home": "Home"
@@ -193,5 +193,18 @@
     "recentLessons": "Recent lessons",
     "nextUp": "Next up",
     "teacherFeedback": "Teacher feedback"
+  },
+  "Footer": {
+    "label": "Site",
+    "about": "About",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "Legal": {
+    "lastUpdated": "Last updated: {date}",
+    "draftNotice": "Draft: this document is being reviewed and may change before the pilot starts.",
+    "contactHeading": "Contact us",
+    "contactEmail": "For privacy questions or requests, email <link>{email}</link>.",
+    "contactPending": "For privacy questions or requests, contact your organization’s administrator. A direct contact address will be added here soon."
   }
 }
