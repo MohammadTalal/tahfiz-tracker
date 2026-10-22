@@ -485,6 +485,9 @@ isOneToOne: false
 "create_organization":
 { Args: { "p_also_teacher"?: boolean,"p_name": string,"p_organization_type"?: string,"p_preferred_language"?: string,"p_timezone"?: string }; Returns: string
                            },
+"enroll_existing_student":
+{ Args: { "p_class_id": string,"p_student_id": string }; Returns: undefined
+                           },
 "enroll_new_student":
 { Args: { "p_class_id": string,"p_display_name": string }; Returns: string
                            },
@@ -493,6 +496,14 @@ isOneToOne: false
                            },
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
+                           },
+"unassigned_students":
+{ Args: { "p_class_id": string }; Returns: {
+              "display_name": string,"id": string
+            }[]
+                           },
+"unenroll_student":
+{ Args: { "p_class_id": string,"p_student_id": string }; Returns: undefined
                            }
           }
           Enums: {

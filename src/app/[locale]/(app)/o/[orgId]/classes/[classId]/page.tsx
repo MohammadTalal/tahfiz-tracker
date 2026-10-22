@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
-import { assignTeacher, enrollStudent } from "@/features/workspace/actions";
+import { addExistingStudent, assignTeacher, enrollStudent } from "@/features/workspace/actions";
 import { ClassProgress } from "@/features/workspace/components/class-progress";
+import { AddExistingStudentForm } from "@/features/workspace/components/class-students";
 import { ClassTeachers } from "@/features/workspace/components/class-teachers";
 import { Panel, Section } from "@/features/workspace/components/display";
 import { NameForm } from "@/features/workspace/components/simple-forms";
@@ -14,6 +15,7 @@ import {
   getOrganizationForStaff,
   getStudentsProgress,
   getTeachers,
+  getUnassignedStudents,
 } from "@/features/workspace/queries";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
@@ -29,16 +31,17 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
   const cls = await getClassWithRoster(orgId, classId, user.id);
   if (!cls) notFound();
 
-  const [progress, classTeachers, orgTeachers] = await Promise.all([
+  const canAdd = org.isAdmin || cls.taughtByMe;
+  const [progress, classTeachers, orgTeachers, unassigned] = await Promise.all([
     getStudentsProgress(cls.students),
     getClassTeachers(classId),
     org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
+    canAdd ? getUnassignedStudents(classId) : Promise.resolve([]),
   ]);
   const available = orgTeachers.filter((teacher) => !classTeachers.some((c) => c.id === teacher.id));
 
   const t = await getTranslations("Class");
   const to = await getTranslations("Org");
-  const canAdd = org.isAdmin || cls.taughtByMe;
 
   return (
     <>
@@ -63,7 +66,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
                 description={canAdd ? t("noStudentsHint") : undefined}
               />
             ) : (
-              <ClassProgress orgId={orgId} students={progress} />
+              <ClassProgress orgId={orgId} classId={classId} students={progress} canManage={canAdd} />
             )}
           </Section>
         </div>
@@ -79,13 +82,17 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
           </Panel>
           {canAdd && (
             <Panel title={t("addStudent")} icon={UserPlus}>
-              <NameForm
-                action={enrollStudent.bind(null, classId)}
-                label={t("studentName")}
-                submitLabel={t("add")}
-                successMessage={t("studentAdded")}
-              />
-              <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
+              <AddExistingStudentForm action={addExistingStudent.bind(null, classId)} students={unassigned} />
+              <div className="flex flex-col gap-1.5 border-t pt-3">
+                <h3 className="text-sm font-medium">{t("newStudent")}</h3>
+                <NameForm
+                  action={enrollStudent.bind(null, classId)}
+                  label={t("studentName")}
+                  submitLabel={t("add")}
+                  successMessage={t("studentAdded")}
+                />
+                <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
+              </div>
             </Panel>
           )}
         </aside>

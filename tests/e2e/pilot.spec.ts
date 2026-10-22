@@ -192,8 +192,17 @@ test("a teacher adds a student to their own class but cannot export", async ({ p
   await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000002");
   const name = `طالب ${Date.now()}`;
   await page.getByLabel("اسم الطالب").fill(name);
-  await page.getByRole("button", { name: "إضافة", exact: true }).click();
+  await page.getByLabel("اسم الطالب").press("Enter");
   await expect(page.getByRole("link", { name })).toBeVisible();
+
+  // Unlink the student, then add them back from the "without a class" list.
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: `إخراج ${name} من هذه الحلقة` }).click();
+  await expect(page.getByRole("link", { name })).toHaveCount(0);
+  await page.getByLabel("طالب بدون حلقة").selectOption({ label: name });
+  await page.getByLabel("طالب بدون حلقة").locator("xpath=ancestor::form").getByRole("button").click();
+  await expect(page.getByRole("link", { name })).toBeVisible();
+  await expect(page.getByLabel("طالب بدون حلقة").getByRole("option", { name })).toHaveCount(0);
 
   const response = await page.request.get("/api/orgs/d1000000-0000-0000-0000-000000000001/lessons-csv");
   expect(response.status()).toBe(403);

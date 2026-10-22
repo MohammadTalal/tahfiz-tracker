@@ -1,20 +1,38 @@
+import { cn } from "cn";
 import { ChevronLeft, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { InitialAvatar } from "@/components/layout/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import type { StudentProgress } from "../queries";
+import { UnenrollStudentButton } from "./class-students";
 import { DateLabel, PassageLabel, RatingBadge } from "./display";
 
 /**
  * A class at a glance: each student's current memorization, last lesson and
- * linked parents. A table on wide screens, stacked rows on phones.
+ * linked parents. A table on wide screens, stacked rows on phones. With
+ * `canManage`, each row gets a button to unlink the student from the class.
  */
-export function ClassProgress({ orgId, students }: { orgId: string; students: StudentProgress[] }) {
+export function ClassProgress({
+  orgId,
+  classId,
+  students,
+  canManage,
+}: {
+  orgId: string;
+  classId: string;
+  students: StudentProgress[];
+  canManage: boolean;
+}) {
   const t = useTranslations("Class");
   return (
     <div className="bg-card overflow-hidden rounded-xl border shadow-(--shadow-soft)">
-      <div className="text-muted-foreground bg-surface-tint hidden grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_1rem] gap-4 border-b px-4 py-2.5 text-xs font-medium md:grid">
+      <div
+        className={cn(
+          "text-muted-foreground bg-surface-tint hidden grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_1rem] gap-4 border-b px-4 py-2.5 text-xs font-medium md:grid",
+          canManage && "pe-14",
+        )}
+      >
         <span>{t("student")}</span>
         <span>{t("memorizingNow")}</span>
         <span>{t("lastLesson")}</span>
@@ -23,10 +41,10 @@ export function ClassProgress({ orgId, students }: { orgId: string; students: St
       </div>
       <ul className="divide-y">
         {students.map((s) => (
-          <li key={s.id}>
+          <li key={s.id} className="flex items-center">
             <Link
               href={`/o/${orgId}/students/${s.id}`}
-              className="hover:bg-surface-tint grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors duration-150 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_1rem]"
+              className="hover:bg-surface-tint flex-1grid-cols-[minmax(0,1fr)_auto] grid min-w-0 items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors duration-150 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_1rem]"
             >
               <span className="flex min-w-0 items-center gap-3">
                 <InitialAvatar name={s.name} size="sm" />
@@ -79,6 +97,11 @@ export function ClassProgress({ orgId, students }: { orgId: string; students: St
                 aria-hidden
               />
             </Link>
+            {canManage && (
+              <span className="me-2 shrink-0">
+                <UnenrollStudentButton classId={classId} student={s} />
+              </span>
+            )}
           </li>
         ))}
       </ul>

@@ -248,6 +248,14 @@ export async function getClassTeachers(classId: string) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** Students of the class's organization who are not in any class. */
+export async function getUnassignedStudents(classId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("unassigned_students", { p_class_id: classId });
+  if (error) throw error;
+  return data.map((s) => ({ id: s.id, name: s.display_name }));
+}
+
 export type StudentProgress = {
   id: string;
   name: string;

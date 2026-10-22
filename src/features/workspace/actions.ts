@@ -79,6 +79,48 @@ export async function enrollStudent(
   return { status: "success" };
 }
 
+/** Adds a student who has no class to this class. */
+export async function addExistingStudent(
+  classId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const studentId = formData.get("studentId");
+  if (!idSchema.safeParse(classId).success || !idSchema.safeParse(studentId).success) {
+    return errorState("required");
+  }
+  const ctx = await signedInClient();
+  if (!ctx) return errorState("not_allowed");
+
+  const { error } = await ctx.supabase.rpc("enroll_existing_student", {
+    p_class_id: classId,
+    p_student_id: studentId as string,
+  });
+  if (error) return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
+
+  refresh();
+  return { status: "success" };
+}
+
+/** Unlinks a student from a class. The student, lessons and parents are kept. */
+export async function unenrollStudent(
+  classId: string,
+  studentId: string,
+): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(classId).success || !idSchema.safeParse(studentId).success)
+    return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { error } = await ctx.supabase.rpc("unenroll_student", {
+    p_class_id: classId,
+    p_student_id: studentId,
+  });
+  if (error) return { error: error.code === PERMISSION_DENIED ? "not_allowed" : "generic" };
+
+  refresh();
+}
+
 /** Assigns a teacher of the organization to a class (admins; enforced by RLS). */
 export async function assignTeacher(
   classId: string,
