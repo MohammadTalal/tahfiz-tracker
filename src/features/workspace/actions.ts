@@ -99,13 +99,11 @@ export async function assignTeacher(
     .maybeSingle();
   if (!cls) return errorState("not_allowed");
 
-  const { error } = await ctx.supabase
-    .from("class_teachers")
-    .insert({
-      organization_id: cls.organization_id,
-      class_id: classId,
-      teacher_user_id: teacherId as string,
-    });
+  const { error } = await ctx.supabase.from("class_teachers").insert({
+    organization_id: cls.organization_id,
+    class_id: classId,
+    teacher_user_id: teacherId as string,
+  });
   if (error) return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
 
   refresh();

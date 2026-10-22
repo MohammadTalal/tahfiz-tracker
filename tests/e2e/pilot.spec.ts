@@ -28,7 +28,10 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await page.getByLabel("حلقة جديدة").fill("حلقة الفجر");
     await page.getByRole("button", { name: "إضافة حلقة" }).click();
     // First match is the class card; the teacher list links to it too.
-    await page.getByRole("link", { name: /حلقة الفجر/ }).first().click();
+    await page
+      .getByRole("link", { name: /حلقة الفجر/ })
+      .first()
+      .click();
     await page.getByLabel("اسم الطالب").fill("عمر");
     await page.getByRole("button", { name: "إضافة", exact: true }).click();
     await page.getByRole("link", { name: "عمر" }).click();
