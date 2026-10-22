@@ -106,6 +106,8 @@ export async function acceptInvite(token: string): Promise<{ error: string } | u
   if (!ctx) return { error: "not_allowed" };
 
   const { data, error } = await ctx.supabase.rpc("accept_invitation", { p_token: token.slice(0, 200) });
+  // Used or not, this invitation no longer needs to be remembered on the account.
+  if (ctx.user.pendingInvite === token) await forgetPendingInvite(ctx.supabase);
   if (error) return { error: "invalid" };
 
   const result = data as { type?: string; student_id?: string | null; organization_id?: string };
@@ -114,6 +116,12 @@ export async function acceptInvite(token: string): Promise<{ error: string } | u
     return redirect({ href: `/children/${result.student_id}`, locale });
   }
   return redirect({ href: `/o/${result.organization_id}`, locale });
+}
+
+/** Clears the invitation saved at sign-up, and refreshes the session so its claims match. */
+async function forgetPendingInvite(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { error } = await supabase.auth.updateUser({ data: { pending_invite: null } });
+  if (!error) await supabase.auth.refreshSession();
 }
 
 /** Marks an open assignment as verified. RLS limits this to the student's teachers and admins. */

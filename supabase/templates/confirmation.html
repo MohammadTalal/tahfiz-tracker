@@ -1,0 +1,23 @@
+<!-- Sign-up confirmation. Paste the same HTML into Supabase Dashboard → Authentication → Emails → "Confirm signup". -->
+<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1c2923">
+  <h2 dir="rtl" style="color: #145a45">منصة تحفيظ القرآن</h2>
+  <p dir="rtl">اضغط الزر لتأكيد بريدك الإلكتروني. يعمل الرابط على أي جهاز.</p>
+  <p>Tap the button to confirm your email. The link works on any device.</p>
+  <p>
+    <a
+      href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}"
+      style="
+        display: inline-block;
+        background: #145a45;
+        color: #ffffff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+      "
+      >تأكيد البريد · Confirm email</a
+    >
+  </p>
+  <p style="color: #5e6b63; font-size: 13px">
+    إن لم تنشئ حسابًا فتجاهل هذه الرسالة. · If you didn't sign up, ignore this email.
+  </p>
+</div>

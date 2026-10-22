@@ -1,0 +1,23 @@
+<!-- Password reset. Paste the same HTML into Supabase Dashboard → Authentication → Emails → "Reset password". -->
+<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1c2923">
+  <h2 dir="rtl" style="color: #145a45">منصة تحفيظ القرآن</h2>
+  <p dir="rtl">اضغط الزر لتعيين كلمة مرور جديدة.</p>
+  <p>Tap the button to set a new password.</p>
+  <p>
+    <a
+      href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next={{ .RedirectTo }}"
+      style="
+        display: inline-block;
+        background: #145a45;
+        color: #ffffff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+      "
+      >تعيين كلمة المرور · Reset password</a
+    >
+  </p>
+  <p style="color: #5e6b63; font-size: 13px">
+    إن لم تطلب ذلك فتجاهل هذه الرسالة. · If you didn't ask for this, ignore this email.
+  </p>
+</div>

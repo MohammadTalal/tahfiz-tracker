@@ -1,17 +1,9 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { authEmailLink, PASSWORD, signUpAndGetConfirmLink } from "./helpers";
 
 // Full pilot workflow against the local Supabase stack (`npm run db:start`).
 // Arabic UI, as most teachers will use it.
 test.use({ locale: "ar-SA" });
-
-const PASSWORD = "test-password-123";
-
-async function signUp(page: Page, name: string, email: string) {
-  await page.getByLabel("اسمك").fill(name);
-  await page.getByLabel("البريد الإلكتروني").fill(email);
-  await page.getByLabel("كلمة المرور").fill(PASSWORD);
-  await page.getByRole("button", { name: "إنشاء الحساب" }).click();
-}
 
 test("teacher records a lesson and a parent follows progress", async ({ page, browser }, testInfo) => {
   test.slow();
@@ -23,7 +15,8 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
 
   await test.step("teacher signs up and creates a circle", async () => {
     await page.goto("/ar/signup");
-    await signUp(page, "الأستاذ سعيد", teacherEmail);
+    const confirmLink = await signUpAndGetConfirmLink(page, "الأستاذ سعيد", teacherEmail);
+    await page.goto(confirmLink);
     await expect(page).toHaveURL(/\/ar\/onboarding$/);
     await page.getByLabel("الاسم", { exact: true }).fill("حلقة الاختبار");
     await expect(page.getByLabel("أنا أيضًا أدرّس الطلاب هنا")).toBeChecked();
@@ -120,13 +113,20 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     );
   });
 
+  // The parent signs up on one browser and opens the confirmation email on
+  // another (like a phone's mail app): the invitation must survive that.
+  const signupContext = await browser.newContext({ locale: "ar-SA" });
   const parentContext = await browser.newContext({ locale: "ar-SA" });
   const parent = await parentContext.newPage();
 
   await test.step("parent signs up through the link and sees only permitted progress", async () => {
-    await parent.goto(inviteUrl);
-    await parent.getByRole("link", { name: "إنشاء الحساب" }).click();
-    await signUp(parent, "أبو عمر", parentEmail);
+    const signupPage = await signupContext.newPage();
+    await signupPage.goto(inviteUrl);
+    await signupPage.getByRole("link", { name: "إنشاء الحساب" }).click();
+    const confirmLink = await signUpAndGetConfirmLink(signupPage, "أبو عمر", parentEmail);
+    await signupContext.close();
+
+    await parent.goto(confirmLink);
     await expect(parent).toHaveURL(/\/ar\/invite\//);
     await parent.getByRole("button", { name: "قبول الدعوة" }).click();
 
@@ -193,4 +193,82 @@ test("a teacher adds a student to their own class but cannot export", async ({ p
 
   const response = await page.request.get("/api/orgs/d1000000-0000-0000-0000-000000000001/lessons-csv");
   expect(response.status()).toBe(403);
+});
+
+test("an invited teacher joins the organization even when the email is confirmed on another device", async ({
+  page,
+  browser,
+}, testInfo) => {
+  test.slow();
+  const teacherEmail = `invited-teacher-${testInfo.project.name}-${Date.now()}@e2e.local`;
+
+  // Admin (seed) creates a teacher invitation link.
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.getByRole("button", { name: "دعوة معلم" }).click();
+  const inviteUrl = await page.getByRole("textbox", { name: "دعوة معلم" }).inputValue();
+
+  // Laptop: the teacher opens the link and creates an account.
+  const laptop = await (await browser.newContext({ locale: "ar-SA" })).newPage();
+  await laptop.goto(inviteUrl);
+  await laptop.getByRole("link", { name: "إنشاء الحساب" }).click();
+  const confirmLink = await signUpAndGetConfirmLink(laptop, "الأستاذة مريم", teacherEmail);
+
+  // Phone: the confirmation email is opened in a different browser.
+  const phoneContext = await browser.newContext({ locale: "ar-SA" });
+  const phone = await phoneContext.newPage();
+  await phone.goto(confirmLink);
+  await expect(phone).toHaveURL(/\/ar\/invite\//);
+  // They don't accept yet, and go back to the laptop later.
+  await phoneContext.close();
+
+  // Laptop, later: a normal log-in from the home page must lead back to the invitation,
+  // not to "create your circle".
+  await laptop.goto("/ar/login");
+  await laptop.getByLabel("البريد الإلكتروني").fill(teacherEmail);
+  await laptop.getByLabel("كلمة المرور").fill(PASSWORD);
+  await laptop.getByRole("button", { name: "دخول" }).click();
+  await expect(laptop).toHaveURL(/\/ar\/invite\//);
+  await laptop.getByRole("button", { name: "قبول الدعوة" }).click();
+  await expect(laptop.getByRole("heading", { level: 1, name: "مسجد النور" })).toBeVisible();
+
+  // Afterwards the home page goes straight to the organization, with no loop.
+  await laptop.goto("/ar/dashboard");
+  await expect(laptop.getByRole("heading", { level: 1, name: "مسجد النور" })).toBeVisible();
+});
+
+test("password reset works when the email is opened on another device", async ({
+  page,
+  browser,
+}, testInfo) => {
+  test.slow();
+  const email = `reset-${testInfo.project.name}-${Date.now()}@e2e.local`;
+  await page.goto("/ar/signup");
+  await page.goto(await signUpAndGetConfirmLink(page, "مستخدم الاختبار", email));
+  await expect(page).toHaveURL(/\/ar\/onboarding$/);
+
+  const other = await (await browser.newContext({ locale: "ar-SA" })).newPage();
+  await other.goto("/ar/forgot-password");
+  await other.getByLabel("البريد الإلكتروني").fill(email);
+  await other.getByRole("button", { name: "إرسال الرابط" }).click();
+  await expect(other.getByText(/سيصلك رابط الاستعادة/)).toBeVisible();
+
+  const phone = await (await browser.newContext({ locale: "ar-SA" })).newPage();
+  await phone.goto(await authEmailLink(phone.request, email, "Reset"));
+  await expect(phone).toHaveURL(/\/ar\/reset-password$/);
+  await phone.getByLabel("كلمة المرور الجديدة").fill("a-brand-new-password");
+  await phone.getByLabel("تأكيد كلمة المرور").fill("a-brand-new-password");
+  await phone.getByRole("button", { name: "حفظ كلمة المرور" }).click();
+  await expect(phone).toHaveURL(/\/ar\/onboarding$/);
+
+  // The new password works for a fresh log-in.
+  const fresh = await (await browser.newContext({ locale: "ar-SA" })).newPage();
+  await fresh.goto("/ar/login");
+  await fresh.getByLabel("البريد الإلكتروني").fill(email);
+  await fresh.getByLabel("كلمة المرور").fill("a-brand-new-password");
+  await fresh.getByRole("button", { name: "دخول" }).click();
+  await expect(fresh).toHaveURL(/\/ar\/onboarding$/);
 });

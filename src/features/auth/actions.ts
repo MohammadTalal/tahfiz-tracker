@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { type ActionState, errorState, formObject, invalidState } from "@/lib/action-state";
+import { inviteTokenFrom } from "@/lib/invite-token";
 import { safeNextPath } from "@/lib/safe-next";
 import { createClient } from "@/lib/supabase/server";
 import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema } from "./schemas";
@@ -15,6 +16,11 @@ async function siteOrigin(): Promise<string> {
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";
   return `${proto}://${host}`;
+}
+
+/** Return address for auth emails: /auth/callback, which then continues to `path`. */
+function authReturnUrl(origin: string, path: string): string {
+  return `${origin}/auth/callback?next=${encodeURIComponent(path)}`;
 }
 
 /** Strips a leading /ar or /en so next-intl's redirect can re-add the locale. */
@@ -48,8 +54,14 @@ export async function signup(_prev: ActionState, formData: FormData): Promise<Ac
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { display_name: parsed.data.displayName, preferred_language: locale },
-      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(`/${locale}${withoutLocale(next)}`)}`,
+      data: {
+        display_name: parsed.data.displayName,
+        preferred_language: locale,
+        // Remembered on the account so the invitation survives email
+        // confirmation on another device and later sign-ins.
+        ...(inviteTokenFrom(next) ? { pending_invite: inviteTokenFrom(next) } : {}),
+      },
+      emailRedirectTo: authReturnUrl(await siteOrigin(), `/${locale}${withoutLocale(next)}`),
     },
   });
   // One generic message, so the form can't be used to check which emails exist.
@@ -66,7 +78,7 @@ export async function forgotPassword(_prev: ActionState, formData: FormData): Pr
   const locale = await getLocale();
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(`/${locale}/reset-password`)}`,
+    redirectTo: authReturnUrl(await siteOrigin(), `/${locale}/reset-password`),
   });
   // Same answer whether or not the account exists.
   return { status: "success", message: "linkSent" };

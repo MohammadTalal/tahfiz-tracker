@@ -102,7 +102,8 @@
     "type_other": "Other",
     "alsoTeacher": "I also teach students here",
     "create": "Create",
-    "alsoTeacherHint": "You can record lessons yourself as well as manage the circle."
+    "alsoTeacherHint": "You can record lessons yourself as well as manage the circle.",
+    "invitedHint": "Were you invited to join an existing circle? Don’t create a new one — open the invitation link you received again."
   },
   "Org": {
     "classes": "Classes",

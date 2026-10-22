@@ -22,6 +22,9 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/das
   ]);
 
   if (organizations.length === 0 && children.length === 0) {
+    // Invited at sign-up but not joined yet (e.g. the email was confirmed on
+    // another device): finish joining instead of creating a new circle.
+    if (user.pendingInvite) return redirect({ href: `/invite/${user.pendingInvite}`, locale });
     return redirect({ href: "/onboarding", locale });
   }
   if (organizations.length === 1 && children.length === 0) {

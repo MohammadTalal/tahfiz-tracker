@@ -3,9 +3,15 @@ import "server-only";
 import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
+import { isInviteToken } from "@/lib/invite-token";
 import { createClient } from "@/lib/supabase/server";
 
-export type CurrentUser = { id: string; email: string | null };
+export type CurrentUser = {
+  id: string;
+  email: string | null;
+  /** Invitation token saved at sign-up and not yet accepted (see acceptInvite). */
+  pendingInvite: string | null;
+};
 
 /**
  * The signed-in user, verified from the session JWT (never trusted from the
@@ -19,7 +25,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims?.sub) return null;
-  return { id: data.claims.sub, email: typeof data.claims.email === "string" ? data.claims.email : null };
+  const pending = (data.claims.user_metadata as Record<string, unknown> | undefined)?.pending_invite;
+  return {
+    id: data.claims.sub,
+    email: typeof data.claims.email === "string" ? data.claims.email : null,
+    pendingInvite: isInviteToken(pending) ? pending : null,
+  };
 }
 
 /** Like getCurrentUser, but sends signed-out users to the login page. */
