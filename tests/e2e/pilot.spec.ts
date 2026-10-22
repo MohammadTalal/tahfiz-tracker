@@ -272,3 +272,11 @@ test("password reset works when the email is opened on another device", async ({
   await fresh.getByRole("button", { name: "دخول" }).click();
   await expect(fresh).toHaveURL(/\/ar\/onboarding$/);
 });
+
+test("the reset page explains an expired or wrong-browser link", async ({ page }) => {
+  await page.goto("/ar/reset-password");
+  await page.getByLabel("كلمة المرور الجديدة").fill("another-new-password");
+  await page.getByLabel("تأكيد كلمة المرور").fill("another-new-password");
+  await page.getByRole("button", { name: "حفظ كلمة المرور" }).click();
+  await expect(page.getByText(/فُتح في متصفح مختلف/)).toBeVisible();
+});

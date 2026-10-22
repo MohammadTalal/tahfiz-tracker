@@ -89,8 +89,20 @@ export async function resetPassword(_prev: ActionState, formData: FormData): Pro
   if (!parsed.success) return invalidState(parsed.error);
 
   const supabase = await createClient();
+  // The reset link signs the user in; without that session there is nothing to update.
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) return errorState("reset_link_expired");
+
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
-  if (error) return errorState();
+  if (error) {
+    if (error.code === "same_password") return errorState("same_password");
+    if (error.code === "weak_password") return errorState("weak_password");
+    if (error.code === "reauthentication_needed" || error.code === "session_not_found") {
+      return errorState("reset_link_expired");
+    }
+    console.error("resetPassword failed", error.code);
+    return errorState();
+  }
 
   const locale = await getLocale();
   return redirect({ href: "/dashboard", locale });

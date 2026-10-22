@@ -49,7 +49,10 @@
     "not_allowed": "You don't have permission to do this.",
     "ayah_out_of_range": "This surah doesn't have that many ayahs",
     "end_before_start": "The end must come after the start",
-    "network": "Not saved — no connection. Your entry is kept on this device. Try again when you're online."
+    "network": "Not saved — no connection. Your entry is kept on this device. Try again when you're online.",
+    "reset_link_expired": "This reset link has expired or was opened in a different browser. Request a new link and open it on the same device.",
+    "same_password": "The new password must be different from your current password.",
+    "weak_password": "This password is too easy to guess. Use a longer one with letters and numbers."
   },
   "Auth": {
     "loginTitle": "Log in",
