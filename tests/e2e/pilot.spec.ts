@@ -204,8 +204,36 @@ test("a teacher adds a student to their own class but cannot export", async ({ p
   await expect(page.getByRole("link", { name })).toBeVisible();
   await expect(page.getByLabel("طالب بدون حلقة").getByRole("option", { name })).toHaveCount(0);
 
+  // Adding the same name again warns first; a second press adds the new student.
+  await page.getByLabel("اسم الطالب").fill(name);
+  await page.getByLabel("اسم الطالب").press("Enter");
+  await expect(page.getByText("يوجد طالب بهذا الاسم")).toBeVisible();
+  await expect(page.getByRole("link", { name })).toHaveCount(1);
+  await page.getByLabel("اسم الطالب").press("Enter");
+  await expect(page.getByRole("link", { name })).toHaveCount(2);
+
   const response = await page.request.get("/api/orgs/d1000000-0000-0000-0000-000000000001/lessons-csv");
   expect(response.status()).toBe(403);
+});
+
+test("an admin archives a student without a class", async ({ page }) => {
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000002");
+  const name = `مكرر ${Date.now()}`;
+  await page.getByLabel("اسم الطالب").fill(name);
+  await page.getByLabel("اسم الطالب").press("Enter");
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: `إخراج ${name} من هذه الحلقة` }).click();
+  await expect(page.getByRole("link", { name })).toHaveCount(0);
+
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001");
+  await expect(page.getByRole("link", { name })).toBeVisible();
+  await page.getByRole("button", { name: `أرشفة ${name}` }).click();
+  await expect(page.getByRole("link", { name })).toHaveCount(0);
 });
 
 test("an invited teacher joins the organization even when the email is confirmed on another device", async ({

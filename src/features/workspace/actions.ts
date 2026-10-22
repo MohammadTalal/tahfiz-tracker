@@ -13,6 +13,7 @@ import { createOrganizationSchema, nameSchema, recordLessonSchema } from "./sche
 // database functions; a "not allowed" result just maps their error.
 
 const PERMISSION_DENIED = "42501";
+const UNIQUE_VIOLATION = "23505";
 
 async function signedInClient() {
   const user = await getCurrentUser();
@@ -69,11 +70,16 @@ export async function enrollStudent(
   const ctx = await signedInClient();
   if (!ctx) return errorState("not_allowed");
 
+  // A name that matches an existing student needs a second, confirmed submit.
   const { error } = await ctx.supabase.rpc("enroll_new_student", {
     p_class_id: classId,
     p_display_name: parsed.data.name,
+    p_allow_duplicate: formData.get("confirmedName") === parsed.data.name,
   });
-  if (error) return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) return errorState("duplicate_student");
+    return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
+  }
 
   refresh();
   return { status: "success" };
@@ -116,6 +122,18 @@ export async function unenrollStudent(
     p_class_id: classId,
     p_student_id: studentId,
   });
+  if (error) return { error: error.code === PERMISSION_DENIED ? "not_allowed" : "generic" };
+
+  refresh();
+}
+
+/** Archives a student (admins). Their history and parent links are kept. */
+export async function archiveStudent(studentId: string): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(studentId).success) return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { error } = await ctx.supabase.rpc("archive_student", { p_student_id: studentId });
   if (error) return { error: error.code === PERMISSION_DENIED ? "not_allowed" : "generic" };
 
   refresh();

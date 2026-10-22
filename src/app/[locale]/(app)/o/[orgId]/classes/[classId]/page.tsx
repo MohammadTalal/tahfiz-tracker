@@ -90,6 +90,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
                   label={t("studentName")}
                   submitLabel={t("add")}
                   successMessage={t("studentAdded")}
+                  confirmError="duplicate_student"
                 />
                 <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
               </div>

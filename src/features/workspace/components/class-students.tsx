@@ -1,6 +1,6 @@
 "use client";
 
-import { UserMinus, UserPlus } from "lucide-react";
+import { Archive, UserMinus, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useId, useTransition } from "react";
 import { toast } from "sonner";
@@ -9,8 +9,9 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { useRouter } from "@/i18n/navigation";
 import { type ActionState, idleState } from "@/lib/action-state";
-import { unenrollStudent } from "../actions";
+import { archiveStudent, unenrollStudent } from "../actions";
 
 type Person = { id: string; name: string };
 
@@ -51,6 +52,43 @@ export function AddExistingStudentForm({
         </SubmitButton>
       </div>
     </form>
+  );
+}
+
+/** Archives a student (admins), optionally leaving their page afterwards. */
+export function ArchiveStudentButton({
+  student,
+  redirectTo,
+  withLabel = false,
+}: {
+  student: Person;
+  redirectTo?: string;
+  withLabel?: boolean;
+}) {
+  const t = useTranslations("Student");
+  const te = useTranslations("Errors");
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <Button
+      variant={withLabel ? "outline" : "ghost"}
+      size={withLabel ? "default" : "icon-sm"}
+      disabled={pending}
+      aria-label={t("archive", { name: student.name })}
+      title={t("archive", { name: student.name })}
+      onClick={() => {
+        if (!window.confirm(t("confirmArchive", { name: student.name }))) return;
+        startTransition(async () => {
+          const result = await archiveStudent(student.id);
+          if (result?.error) return void toast.error(te(result.error));
+          toast.success(t("archived"));
+          if (redirectTo) router.replace(redirectTo);
+        });
+      }}
+    >
+      <Archive className="size-4" aria-hidden />
+      {withLabel && t("archiveShort")}
+    </Button>
   );
 }
 

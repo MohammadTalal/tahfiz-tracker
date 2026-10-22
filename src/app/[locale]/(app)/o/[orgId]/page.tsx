@@ -1,16 +1,23 @@
-import { ChevronLeft, Database, Download, Network, School, UserCheck, Users } from "lucide-react";
+import { ChevronLeft, Database, Download, Network, School, UserCheck, Users, UserX } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { InitialAvatar } from "@/components/layout/avatar";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { createClass } from "@/features/workspace/actions";
+import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
 import { Panel, Section } from "@/features/workspace/components/display";
 import { InvitePanel } from "@/features/workspace/components/invite-panel";
 import { NameForm } from "@/features/workspace/components/simple-forms";
 import { TeacherList } from "@/features/workspace/components/teacher-list";
-import { getClasses, getOrganizationForStaff, getTeachers } from "@/features/workspace/queries";
+import {
+  getClasses,
+  getOrganizationForStaff,
+  getOrgUnassignedStudents,
+  getTeachers,
+} from "@/features/workspace/queries";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
@@ -25,9 +32,10 @@ export default async function OrganizationPage({ params }: PageProps<"/[locale]/
   const org = await getOrganizationForStaff(orgId, user.id);
   if (!org) notFound();
 
-  const [classes, teachers] = await Promise.all([
+  const [classes, teachers, unassigned] = await Promise.all([
     getClasses(orgId, user.id, org.isAdmin),
     org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
+    org.isAdmin ? getOrgUnassignedStudents(orgId) : Promise.resolve([]),
   ]);
   const t = await getTranslations("Org");
   const td = await getTranslations("Dashboard");
@@ -129,6 +137,25 @@ export default async function OrganizationPage({ params }: PageProps<"/[locale]/
                 <InvitePanel orgId={orgId} type="teacher" label={t("inviteTeacher")} />
               </div>
             </Panel>
+            {unassigned.length > 0 && (
+              <Panel title={t("unassignedStudents")} icon={UserX}>
+                <p className="text-muted-foreground text-sm">{t("unassignedHint")}</p>
+                <ul className="flex flex-col gap-2">
+                  {unassigned.map((s) => (
+                    <li key={s.id} className="flex items-center gap-2">
+                      <InitialAvatar name={s.name} size="sm" />
+                      <Link
+                        href={`/o/${orgId}/students/${s.id}`}
+                        className="hover:text-primary flex-1 truncate text-sm font-medium transition-colors duration-150"
+                      >
+                        {s.name}
+                      </Link>
+                      <ArchiveStudentButton student={s} />
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+            )}
             <Panel title={t("data")} icon={Database}>
               <p className="text-muted-foreground text-sm">{t("exportHelp")}</p>
               <a

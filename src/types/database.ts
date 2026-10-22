@@ -476,6 +476,9 @@ isOneToOne: false
             "accept_invitation":
 { Args: { "p_token": string }; Returns: Json
                            },
+"archive_student":
+{ Args: { "p_student_id": string }; Returns: undefined
+                           },
 "create_class":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
                            },
@@ -489,7 +492,7 @@ isOneToOne: false
 { Args: { "p_class_id": string,"p_student_id": string }; Returns: undefined
                            },
 "enroll_new_student":
-{ Args: { "p_class_id": string,"p_display_name": string }; Returns: string
+{ Args: { "p_allow_duplicate"?: boolean,"p_class_id": string,"p_display_name": string }; Returns: string
                            },
 "record_lesson":
 { Args: { "p_accuracy_score"?: number,"p_completes_assignment_id"?: string,"p_end_ayah": number,"p_end_surah": number,"p_idempotency_key": string,"p_lesson_date": string,"p_mistake_categories"?: (string)[],"p_next_memorization"?: Json,"p_next_revisions"?: Json,"p_parent_visible_feedback"?: string,"p_performance_rating": Database["public"]['Enums']["performance_rating"],"p_private_note"?: string,"p_start_ayah": number,"p_start_surah": number,"p_student_id": string }; Returns: string

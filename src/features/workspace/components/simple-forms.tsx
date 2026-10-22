@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useActionState, useEffect, useId, useRef } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TextField } from "@/components/forms/field";
 import { FormMessage } from "@/components/forms/form-message";
@@ -16,21 +16,25 @@ import { ORGANIZATION_TYPES } from "../schemas";
 
 /**
  * One-field form (class name, student name): input and button on one row,
- * clears itself and shows a toast after success.
+ * clears itself and shows a toast after success. When the action answers with
+ * `confirmError`, submitting the same name again sends it as `confirmedName`.
  */
 export function NameForm({
   action,
   label,
   submitLabel,
   successMessage,
+  confirmError,
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   label: string;
   submitLabel: string;
   successMessage?: string;
+  confirmError?: string;
 }) {
   const te = useTranslations("Errors");
   const [state, formAction] = useActionState(action, idleState);
+  const [submittedName, setSubmittedName] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const id = useId();
   useEffect(() => {
@@ -40,9 +44,17 @@ export function NameForm({
   }, [state, successMessage]);
 
   const fieldError = state.fieldErrors?.name;
+  const needsConfirm = confirmError !== undefined && state.error === confirmError;
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-1.5" noValidate>
+    <form
+      ref={formRef}
+      action={formAction}
+      onSubmit={(e) => setSubmittedName(String(new FormData(e.currentTarget).get("name") ?? "").trim())}
+      className="flex flex-col gap-1.5"
+      noValidate
+    >
       {state.status === "error" && state.error !== "invalid" && <FormMessage state={state} />}
+      {needsConfirm && <input type="hidden" name="confirmedName" value={submittedName} />}
       <Label htmlFor={id}>{label}</Label>
       <div className="flex gap-2">
         <Input
@@ -50,6 +62,8 @@ export function NameForm({
           name="name"
           required
           maxLength={100}
+          // React clears the form after each submit; keep the name on errors.
+          defaultValue={state.status === "error" ? submittedName : ""}
           aria-invalid={fieldError ? true : undefined}
           aria-describedby={fieldError ? `${id}-error` : undefined}
           className="flex-1"

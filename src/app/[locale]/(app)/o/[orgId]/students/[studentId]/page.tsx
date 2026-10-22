@@ -14,6 +14,7 @@ import {
   PassageLabel,
   Section,
 } from "@/features/workspace/components/display";
+import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
 import { InvitePanel } from "@/features/workspace/components/invite-panel";
 import {
   getLessonCount,
@@ -61,7 +62,19 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
         back={{ href: `/o/${orgId}`, label: org.name }}
         leading={<InitialAvatar name={student.display_name} size="lg" />}
         title={student.display_name}
-        actions={recordButton("hidden sm:inline-flex")}
+        description={student.status === "archived" ? t("archivedBadge") : undefined}
+        actions={
+          <>
+            {org.isAdmin && student.status === "active" && (
+              <ArchiveStudentButton
+                student={{ id: student.id, name: student.display_name }}
+                redirectTo={`/o/${orgId}`}
+                withLabel
+              />
+            )}
+            {recordButton("hidden sm:inline-flex")}
+          </>
+        }
       />
 
       <StatStrip

@@ -114,7 +114,7 @@ export async function getStudent(studentId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("students")
-    .select("id, display_name, organization_id")
+    .select("id, display_name, organization_id, status")
     .eq("id", studentId)
     .maybeSingle();
   if (error) throw error;
@@ -254,6 +254,21 @@ export async function getUnassignedStudents(classId: string) {
   const { data, error } = await supabase.rpc("unassigned_students", { p_class_id: classId });
   if (error) throw error;
   return data.map((s) => ({ id: s.id, name: s.display_name }));
+}
+
+/** Active students of the organization who are not in any class (admins; RLS). */
+export async function getOrgUnassignedStudents(orgId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("students")
+    .select("id, display_name, class_enrollments(status)")
+    .eq("organization_id", orgId)
+    .eq("status", "active")
+    .order("display_name");
+  if (error) throw error;
+  return data
+    .filter((s) => !s.class_enrollments.some((e) => e.status === "active"))
+    .map((s) => ({ id: s.id, name: s.display_name }));
 }
 
 export type StudentProgress = {

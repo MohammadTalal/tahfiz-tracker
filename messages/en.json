@@ -52,7 +52,8 @@
     "network": "Not saved — no connection. Your entry is kept on this device. Try again when you're online.",
     "reset_link_expired": "This reset link has expired or was opened in a different browser. Request a new link and open it on the same device.",
     "same_password": "The new password must be different from your current password.",
-    "weak_password": "This password is too easy to guess. Use a longer one with letters and numbers."
+    "weak_password": "This password is too easy to guess. Use a longer one with letters and numbers.",
+    "duplicate_student": "A student with this name already exists. If it's the same student, pick them from “Student without a class”; if it's a different student, press “Add” again."
   },
   "Auth": {
     "loginTitle": "Log in",
@@ -129,7 +130,9 @@
     "teachersHint": "Invite other teachers with a single-use link.",
     "noTeachers": "No teachers have joined yet.",
     "notAssigned": "Not assigned to a class",
-    "viewOverview": "Overview"
+    "viewOverview": "Overview",
+    "unassignedStudents": "Students without a class",
+    "unassignedHint": "Add them to a class from the class page, or archive duplicates."
   },
   "Class": {
     "roster": "Students",
@@ -167,6 +170,11 @@
     "none": "—"
   },
   "Student": {
+    "archive": "Archive {name}",
+    "archiveShort": "Archive",
+    "confirmArchive": "Archive {name}? They will leave their class and no longer appear in lists. Their lessons are kept.",
+    "archived": "Student archived",
+    "archivedBadge": "Archived",
     "recordLesson": "Record lesson",
     "openAssignments": "Current assignments",
     "noAssignments": "No open assignments.",
