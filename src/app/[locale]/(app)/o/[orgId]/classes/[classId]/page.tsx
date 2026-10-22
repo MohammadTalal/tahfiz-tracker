@@ -1,14 +1,20 @@
-import { ChevronLeft, UserPlus, Users } from "lucide-react";
+import { GraduationCap, UserPlus, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { InitialAvatar } from "@/components/layout/avatar";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
-import { enrollStudent } from "@/features/workspace/actions";
+import { assignTeacher, enrollStudent } from "@/features/workspace/actions";
+import { ClassProgress } from "@/features/workspace/components/class-progress";
+import { ClassTeachers } from "@/features/workspace/components/class-teachers";
 import { Panel, Section } from "@/features/workspace/components/display";
 import { NameForm } from "@/features/workspace/components/simple-forms";
-import { getClassWithRoster, getOrganizationForStaff } from "@/features/workspace/queries";
-import { Link } from "@/i18n/navigation";
+import {
+  getClassTeachers,
+  getClassWithRoster,
+  getOrganizationForStaff,
+  getStudentsProgress,
+  getTeachers,
+} from "@/features/workspace/queries";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
@@ -22,6 +28,13 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
   if (!org) notFound();
   const cls = await getClassWithRoster(orgId, classId, user.id);
   if (!cls) notFound();
+
+  const [progress, classTeachers, orgTeachers] = await Promise.all([
+    getStudentsProgress(cls.students),
+    getClassTeachers(classId),
+    org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
+  ]);
+  const available = orgTeachers.filter((teacher) => !classTeachers.some((c) => c.id === teacher.id));
 
   const t = await getTranslations("Class");
   const to = await getTranslations("Org");
@@ -42,7 +55,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Section title={t("roster")}>
+          <Section title={t("progress")}>
             {cls.students.length === 0 ? (
               <EmptyState
                 icon={UserPlus}
@@ -50,28 +63,21 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
                 description={canAdd ? t("noStudentsHint") : undefined}
               />
             ) : (
-              <ul className="bg-card flex flex-col divide-y rounded-xl border shadow-(--shadow-soft)">
-                {cls.students.map((s) => (
-                  <li key={s.id}>
-                    <Link
-                      href={`/o/${orgId}/students/${s.id}`}
-                      className="hover:bg-surface-tint flex min-h-14 items-center gap-3 px-4 py-2.5 transition-colors duration-150"
-                    >
-                      <InitialAvatar name={s.display_name} />
-                      <span className="flex-1 truncate font-medium">{s.display_name}</span>
-                      <ChevronLeft
-                        className="text-subtle-foreground size-4 shrink-0 ltr:rotate-180"
-                        aria-hidden
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <ClassProgress orgId={orgId} students={progress} />
             )}
           </Section>
         </div>
-        {canAdd && (
-          <aside>
+        <aside className="flex flex-col gap-4">
+          <Panel title={t("teachers")} icon={GraduationCap}>
+            <ClassTeachers
+              classId={classId}
+              assigned={classTeachers}
+              available={available}
+              canManage={org.isAdmin}
+              assignAction={assignTeacher.bind(null, classId)}
+            />
+          </Panel>
+          {canAdd && (
             <Panel title={t("addStudent")} icon={UserPlus}>
               <NameForm
                 action={enrollStudent.bind(null, classId)}
@@ -81,8 +87,8 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
               />
               <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
             </Panel>
-          </aside>
-        )}
+          )}
+        </aside>
       </div>
     </>
   );

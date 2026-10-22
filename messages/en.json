@@ -126,7 +126,10 @@
     "noClassesTeacherHint": "An admin will add you to a class.",
     "youTeach": "You teach",
     "classAdded": "Class added",
-    "teachersHint": "Invite other teachers with a single-use link."
+    "teachersHint": "Invite other teachers with a single-use link.",
+    "noTeachers": "No teachers have joined yet.",
+    "notAssigned": "Not assigned to a class",
+    "viewOverview": "Overview"
   },
   "Class": {
     "roster": "Students",
@@ -136,7 +139,25 @@
     "add": "Add",
     "noStudentsHint": "Add your first student using the form.",
     "studentAdded": "Student added",
-    "nameHint": "A first name or nickname is enough."
+    "nameHint": "A first name or nickname is enough.",
+    "progress": "Students and progress",
+    "teachers": "Teachers",
+    "noTeachersAssigned": "No teacher assigned yet.",
+    "allTeachersAssigned": "All teachers are already assigned to this class.",
+    "assignTeacher": "Assign a teacher",
+    "chooseTeacher": "Choose a teacher",
+    "assign": "Assign",
+    "teacherAssigned": "Teacher assigned",
+    "removeTeacher": "Remove {name} from this class",
+    "confirmRemove": "Remove {name} from this class? They will no longer see its students.",
+    "teacherRemoved": "Teacher removed",
+    "student": "Student",
+    "memorizingNow": "Memorizing now",
+    "lastLesson": "Last lesson",
+    "parents": "Parents",
+    "notLinked": "No parent",
+    "noLessonsYet": "No lessons yet",
+    "none": "—"
   },
   "Student": {
     "recordLesson": "Record lesson",
@@ -270,5 +291,13 @@
     "parentFeedback": "Feedback for parents",
     "privateNote": "Teacher note",
     "teacher": "Teacher"
+  },
+  "Overview": {
+    "title": "Overview",
+    "teacher": "Teacher",
+    "noTeacherClasses": "Classes without a teacher",
+    "noParent": "No parent",
+    "empty": "Nothing here yet",
+    "emptyHint": "Create classes and invite teachers to see your organization here."
   }
 }

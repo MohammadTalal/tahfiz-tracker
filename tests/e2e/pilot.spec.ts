@@ -27,7 +27,8 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
   await test.step("adds a class and a student", async () => {
     await page.getByLabel("حلقة جديدة").fill("حلقة الفجر");
     await page.getByRole("button", { name: "إضافة حلقة" }).click();
-    await page.getByRole("link", { name: /حلقة الفجر/ }).click();
+    // First match is the class card; the teacher list links to it too.
+    await page.getByRole("link", { name: /حلقة الفجر/ }).first().click();
     await page.getByLabel("اسم الطالب").fill("عمر");
     await page.getByRole("button", { name: "إضافة", exact: true }).click();
     await page.getByRole("link", { name: "عمر" }).click();
@@ -200,7 +201,9 @@ test("an invited teacher joins the organization even when the email is confirmed
   browser,
 }, testInfo) => {
   test.slow();
-  const teacherEmail = `invited-teacher-${testInfo.project.name}-${Date.now()}@e2e.local`;
+  const run = `${testInfo.project.name}-${Date.now()}`;
+  const teacherEmail = `invited-teacher-${run}@e2e.local`;
+  const teacherName = `الأستاذة مريم ${run}`;
 
   // Admin (seed) creates a teacher invitation link.
   await page.goto("/ar/login");
@@ -215,7 +218,7 @@ test("an invited teacher joins the organization even when the email is confirmed
   const laptop = await (await browser.newContext({ locale: "ar-SA" })).newPage();
   await laptop.goto(inviteUrl);
   await laptop.getByRole("link", { name: "إنشاء الحساب" }).click();
-  const confirmLink = await signUpAndGetConfirmLink(laptop, "الأستاذة مريم", teacherEmail);
+  const confirmLink = await signUpAndGetConfirmLink(laptop, teacherName, teacherEmail);
 
   // Phone: the confirmation email is opened in a different browser.
   const phoneContext = await browser.newContext({ locale: "ar-SA" });
@@ -238,6 +241,42 @@ test("an invited teacher joins the organization even when the email is confirmed
   // Afterwards the home page goes straight to the organization, with no loop.
   await laptop.goto("/ar/dashboard");
   await expect(laptop.getByRole("heading", { level: 1, name: "مسجد النور" })).toBeVisible();
+  await expect(laptop.getByText("لا توجد حلقات بعد.")).toBeVisible();
+
+  // The admin now sees the teacher, unassigned, and assigns them to a class.
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001");
+  const teacherRow = page.getByRole("listitem").filter({ hasText: teacherName }).first();
+  await expect(teacherRow.getByText("غير مُسند إلى حلقة")).toBeVisible();
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000001");
+  await page.getByLabel("إسناد معلم").selectOption({ label: teacherName });
+  await page.getByRole("button", { name: "إسناد", exact: true }).click();
+  await expect(page.getByRole("complementary").getByText(teacherName)).toBeVisible();
+
+  // The teacher now sees that class and its students.
+  await laptop.reload();
+  await laptop.getByRole("link", { name: /حلقة أ/ }).click();
+  await expect(laptop.getByRole("link", { name: /أحمد/ })).toBeVisible();
+
+  // The overview shows the teacher with the class.
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/overview");
+  const branch = page
+    .getByRole("region")
+    .filter({ hasText: teacherName })
+    .or(page.locator("section").filter({ hasText: teacherName }));
+  await expect(branch.first().getByRole("link", { name: /حلقة أ/ })).toBeVisible();
+
+  // Removing the teacher (after confirming) ends their access to the class.
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000001");
+  page.once("dialog", (dialog) => dialog.accept());
+  const removeButton = page.getByRole("button", { name: `إزالة ${teacherName} من هذه الحلقة` });
+  await removeButton.click();
+  // Gone from the class's teachers (and back in the "assign" list).
+  await expect(removeButton).toHaveCount(0);
+  await expect(page.getByLabel("إسناد معلم").getByRole("option", { name: teacherName })).toHaveCount(1);
+  await laptop.goto(
+    "/ar/o/d1000000-0000-0000-0000-000000000001/students/d3000000-0000-0000-0000-000000000001",
+  );
+  await expect(laptop.getByText("غير موجود، أو ليست لديك صلاحية.")).toBeVisible();
 });
 
 test("password reset works when the email is opened on another device", async ({

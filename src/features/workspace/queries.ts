@@ -193,3 +193,150 @@ export async function getLessonCount(studentId: string) {
   if (error) throw error;
   return count ?? 0;
 }
+
+export type TeacherSummary = {
+  id: string;
+  name: string;
+  classes: { id: string; name: string; studentCount: number }[];
+};
+
+/** All active teachers of the organization with the classes each one teaches (admins). */
+export async function getTeachers(orgId: string): Promise<TeacherSummary[]> {
+  const supabase = await createClient();
+  const [members, classes] = await Promise.all([
+    supabase
+      .from("organization_memberships")
+      .select("user_id, profiles(display_name)")
+      .eq("organization_id", orgId)
+      .eq("role", "teacher")
+      .eq("status", "active"),
+    supabase
+      .from("classes")
+      .select("id, name, class_teachers(teacher_user_id), class_enrollments(status)")
+      .eq("organization_id", orgId)
+      .eq("status", "active")
+      .order("name"),
+  ]);
+  if (members.error) throw members.error;
+  if (classes.error) throw classes.error;
+
+  return members.data
+    .map((m) => ({
+      id: m.user_id,
+      name: m.profiles?.display_name ?? "",
+      classes: classes.data
+        .filter((c) => c.class_teachers.some((t) => t.teacher_user_id === m.user_id))
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          studentCount: c.class_enrollments.filter((e) => e.status === "active").length,
+        })),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Teachers assigned to one class. */
+export async function getClassTeachers(classId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("class_teachers")
+    .select("teacher_user_id, profiles(display_name)")
+    .eq("class_id", classId);
+  if (error) throw error;
+  return data
+    .map((t) => ({ id: t.teacher_user_id, name: t.profiles?.display_name ?? "" }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export type StudentProgress = {
+  id: string;
+  name: string;
+  memorizing: { start_surah: number; start_ayah: number; end_surah: number; end_ayah: number } | null;
+  lastLesson: {
+    lesson_date: string;
+    performance_rating: Database["public"]["Enums"]["performance_rating"];
+  } | null;
+  parents: { name: string; status: Database["public"]["Enums"]["relationship_status"] }[];
+};
+
+/**
+ * Progress for a set of students in three batched queries (not one per
+ * student): current memorization, last lesson and linked parents.
+ */
+export async function getStudentsProgress(
+  students: { id: string; display_name: string }[],
+): Promise<StudentProgress[]> {
+  if (students.length === 0) return [];
+  const ids = students.map((s) => s.id);
+  const supabase = await createClient();
+  const [lessons, assignments, parents] = await Promise.all([
+    supabase
+      .from("memorization_records")
+      .select("student_id, lesson_date, performance_rating")
+      .in("student_id", ids)
+      .eq("status", "active")
+      .order("lesson_date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("assignments")
+      .select("student_id, start_surah, start_ayah, end_surah, end_ayah")
+      .in("student_id", ids)
+      .eq("assignment_type", "memorization")
+      .in("status", OPEN_STATUSES)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("parent_student_relationships")
+      .select("student_id, status, profiles(display_name)")
+      .in("student_id", ids)
+      .neq("status", "revoked"),
+  ]);
+  if (lessons.error) throw lessons.error;
+  if (assignments.error) throw assignments.error;
+  if (parents.error) throw parents.error;
+
+  return students.map((s) => {
+    const last = lessons.data.find((l) => l.student_id === s.id);
+    const current = assignments.data.find((a) => a.student_id === s.id);
+    return {
+      id: s.id,
+      name: s.display_name,
+      memorizing: current
+        ? {
+            start_surah: current.start_surah,
+            start_ayah: current.start_ayah,
+            end_surah: current.end_surah,
+            end_ayah: current.end_ayah,
+          }
+        : null,
+      lastLesson: last
+        ? { lesson_date: last.lesson_date, performance_rating: last.performance_rating }
+        : null,
+      parents: parents.data
+        .filter((p) => p.student_id === s.id)
+        .map((p) => ({ name: p.profiles?.display_name ?? "", status: p.status })),
+    };
+  });
+}
+
+/** The organization as a tree: classes with their teachers and students (admins). */
+export async function getOrganizationTree(orgId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("classes")
+    .select(
+      "id, name, class_teachers(teacher_user_id, profiles(display_name)), class_enrollments(status, students(id, display_name))",
+    )
+    .eq("organization_id", orgId)
+    .eq("status", "active")
+    .order("name");
+  if (error) throw error;
+  return data.map((c) => ({
+    id: c.id,
+    name: c.name,
+    teachers: c.class_teachers.map((t) => ({ id: t.teacher_user_id, name: t.profiles?.display_name ?? "" })),
+    students: c.class_enrollments
+      .filter((e) => e.status === "active" && e.students)
+      .map((e) => e.students!)
+      .sort((a, b) => a.display_name.localeCompare(b.display_name)),
+  }));
+}

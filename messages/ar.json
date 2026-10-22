@@ -126,7 +126,10 @@
     "noClassesTeacherHint": "سيضيفك المشرف إلى حلقة.",
     "youTeach": "تدرّسها",
     "classAdded": "تمت إضافة الحلقة",
-    "teachersHint": "ادعُ معلمين آخرين برابط يُستخدم مرة واحدة."
+    "teachersHint": "ادعُ معلمين آخرين برابط يُستخدم مرة واحدة.",
+    "noTeachers": "لم ينضم أي معلم بعد.",
+    "notAssigned": "غير مُسند إلى حلقة",
+    "viewOverview": "نظرة عامة"
   },
   "Class": {
     "roster": "الطلاب",
@@ -136,7 +139,25 @@
     "add": "إضافة",
     "noStudentsHint": "أضف طالبك الأول من النموذج.",
     "studentAdded": "تمت إضافة الطالب",
-    "nameHint": "يكفي الاسم الأول أو اسم مختصر."
+    "nameHint": "يكفي الاسم الأول أو اسم مختصر.",
+    "progress": "الطلاب والتقدّم",
+    "teachers": "المعلمون",
+    "noTeachersAssigned": "لم يُسند معلم بعد.",
+    "allTeachersAssigned": "كل المعلمين مُسندون إلى هذه الحلقة.",
+    "assignTeacher": "إسناد معلم",
+    "chooseTeacher": "اختر معلمًا",
+    "assign": "إسناد",
+    "teacherAssigned": "تم إسناد المعلم",
+    "removeTeacher": "إزالة {name} من هذه الحلقة",
+    "confirmRemove": "إزالة {name} من هذه الحلقة؟ لن يرى طلابها بعد ذلك.",
+    "teacherRemoved": "تمت إزالة المعلم",
+    "student": "الطالب",
+    "memorizingNow": "يحفظ الآن",
+    "lastLesson": "آخر درس",
+    "parents": "أولياء الأمور",
+    "notLinked": "لا ولي أمر",
+    "noLessonsYet": "لا دروس بعد",
+    "none": "—"
   },
   "Student": {
     "recordLesson": "تسجيل درس",
@@ -270,5 +291,13 @@
     "parentFeedback": "ملاحظات لولي الأمر",
     "privateNote": "ملاحظة المعلم",
     "teacher": "المعلم"
+  },
+  "Overview": {
+    "title": "نظرة عامة",
+    "teacher": "معلم",
+    "noTeacherClasses": "حلقات بلا معلم",
+    "noParent": "لا ولي أمر",
+    "empty": "لا شيء بعد",
+    "emptyHint": "أنشئ حلقات وادعُ معلمين لترى جهتك هنا."
   }
 }

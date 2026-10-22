@@ -1,18 +1,21 @@
-import { ChevronLeft, Database, Download, School, UserCheck, Users } from "lucide-react";
+import { ChevronLeft, Database, Download, Network, School, UserCheck, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { createClass } from "@/features/workspace/actions";
 import { Panel, Section } from "@/features/workspace/components/display";
 import { InvitePanel } from "@/features/workspace/components/invite-panel";
 import { NameForm } from "@/features/workspace/components/simple-forms";
-import { getClasses, getOrganizationForStaff } from "@/features/workspace/queries";
+import { TeacherList } from "@/features/workspace/components/teacher-list";
+import { getClasses, getOrganizationForStaff, getTeachers } from "@/features/workspace/queries";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { cn } from "@/lib/utils";
 
 export default async function OrganizationPage({ params }: PageProps<"/[locale]/o/[orgId]">) {
   const { locale, orgId } = await params;
@@ -22,7 +25,10 @@ export default async function OrganizationPage({ params }: PageProps<"/[locale]/
   const org = await getOrganizationForStaff(orgId, user.id);
   if (!org) notFound();
 
-  const classes = await getClasses(orgId, user.id, org.isAdmin);
+  const [classes, teachers] = await Promise.all([
+    getClasses(orgId, user.id, org.isAdmin),
+    org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
+  ]);
   const t = await getTranslations("Org");
   const td = await getTranslations("Dashboard");
   const totalStudents = classes.reduce((sum, c) => sum + c.studentCount, 0);
@@ -40,11 +46,21 @@ export default async function OrganizationPage({ params }: PageProps<"/[locale]/
         }
         title={org.name}
         description={t("summary", { classes: classes.length, students: totalStudents })}
-        actions={org.roles.map((role) => (
-          <Badge key={role} variant="mint">
-            {td(`role_${role}`)}
-          </Badge>
-        ))}
+        actions={
+          <>
+            {org.roles.map((role) => (
+              <Badge key={role} variant="mint" className="self-center">
+                {td(`role_${role}`)}
+              </Badge>
+            ))}
+            {org.isAdmin && (
+              <Link href={`/o/${orgId}/overview`} className={cn(buttonVariants({ variant: "outline" }))}>
+                <Network className="size-4" aria-hidden />
+                {t("viewOverview")}
+              </Link>
+            )}
+          </>
+        }
       />
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -107,8 +123,11 @@ export default async function OrganizationPage({ params }: PageProps<"/[locale]/
         {org.isAdmin && (
           <aside className="flex flex-col gap-4">
             <Panel title={t("teachers")} icon={UserCheck}>
-              <p className="text-muted-foreground text-sm">{t("teachersHint")}</p>
-              <InvitePanel orgId={orgId} type="teacher" label={t("inviteTeacher")} />
+              <TeacherList orgId={orgId} teachers={teachers} />
+              <div className="flex flex-col gap-2 border-t pt-3">
+                <p className="text-muted-foreground text-sm">{t("teachersHint")}</p>
+                <InvitePanel orgId={orgId} type="teacher" label={t("inviteTeacher")} />
+              </div>
             </Panel>
             <Panel title={t("data")} icon={Database}>
               <p className="text-muted-foreground text-sm">{t("exportHelp")}</p>

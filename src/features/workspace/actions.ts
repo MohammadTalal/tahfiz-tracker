@@ -79,6 +79,61 @@ export async function enrollStudent(
   return { status: "success" };
 }
 
+/** Assigns a teacher of the organization to a class (admins; enforced by RLS). */
+export async function assignTeacher(
+  classId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const teacherId = formData.get("teacherId");
+  if (!idSchema.safeParse(classId).success || !idSchema.safeParse(teacherId).success) {
+    return errorState("required");
+  }
+  const ctx = await signedInClient();
+  if (!ctx) return errorState("not_allowed");
+
+  const { data: cls } = await ctx.supabase
+    .from("classes")
+    .select("organization_id")
+    .eq("id", classId)
+    .maybeSingle();
+  if (!cls) return errorState("not_allowed");
+
+  const { error } = await ctx.supabase
+    .from("class_teachers")
+    .insert({
+      organization_id: cls.organization_id,
+      class_id: classId,
+      teacher_user_id: teacherId as string,
+    });
+  if (error) return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
+
+  refresh();
+  return { status: "success" };
+}
+
+/** Removes a teacher from a class. Their access to its students ends; history stays. */
+export async function removeTeacher(
+  classId: string,
+  teacherId: string,
+): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(classId).success || !idSchema.safeParse(teacherId).success)
+    return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { data, error } = await ctx.supabase
+    .from("class_teachers")
+    .delete()
+    .eq("class_id", classId)
+    .eq("teacher_user_id", teacherId)
+    .select("id");
+  if (error) return { error: "generic" };
+  if (data.length === 0) return { error: "not_allowed" };
+
+  refresh();
+}
+
 export type InviteResult = { token: string } | { error: string };
 
 export async function createInvite(input: {
