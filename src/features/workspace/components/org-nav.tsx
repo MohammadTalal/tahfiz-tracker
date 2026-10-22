@@ -18,6 +18,8 @@ export function OrgNav({ orgId, orgName, isAdmin }: { orgId: string; orgName: st
     ...(isAdmin ? [{ key: "teachers" as const, href: `${base}/teachers`, icon: UserCheck }] : []),
     { key: "students", href: `${base}/students`, icon: Users },
   ];
+  // Recording a lesson gets the whole phone screen.
+  if (pathname.endsWith("/record")) return null;
   const isActive = (tab: Tab) =>
     tab.key === "dashboard" ? pathname === base : pathname.startsWith(tab.href);
 

@@ -45,17 +45,23 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     studentUrl = page.url();
   });
 
-  await test.step("records a lesson with the surah picker", async () => {
+  await test.step("records a lesson with surah and ayahs", async () => {
     await page.getByRole("link", { name: "تسجيل درس" }).click();
-    await page.getByLabel("السورة", { exact: true }).first().selectOption("67"); // by value
-    await page.getByLabel("إلى الآية").first().fill("5");
-    await page.getByText("جيد", { exact: true }).click();
+    // Everything needed fits one screen: no scrolling to rate and save.
+    await expect(page.getByText("لم يكتمل", { exact: true })).toBeInViewport();
+    await expect(page.getByRole("button", { name: "حفظ الدرس" })).toBeInViewport();
+
+    await page.getByLabel("السورة", { exact: true }).selectOption("67"); // by value
+    await expect(page.getByLabel("من الآية")).toHaveValue("1");
+    await page.getByLabel("إلى الآية").fill("5");
+    await page.getByRole("group").getByText("جيد", { exact: true }).click();
+    // Next memorization is suggested automatically from the passage.
+    await expect(page.getByRole("checkbox", { name: /الحفظ القادم: الملك ٦–١٠/ })).toBeChecked();
+
+    // Notes are optional, behind "Extras".
+    await page.getByRole("button", { name: /إضافات/ }).click();
     await page.getByLabel("ملاحظات لولي الأمر").fill("أحسنت يا عمر");
     await page.getByLabel("ملاحظة خاصة").fill("ملاحظة سرية للمعلم");
-    // Next memorization is suggested automatically from the passage.
-    await expect(page.getByLabel("الحفظ القادم")).toBeChecked();
-    await expect(page.getByLabel("من الآية").nth(1)).toHaveValue("6");
-    await expect(page.getByLabel("إلى الآية").nth(1)).toHaveValue("10");
     await page.getByRole("button", { name: "حفظ الدرس" }).click();
 
     await expect(page).toHaveURL(studentUrl);
@@ -69,8 +75,9 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
   await test.step("records the next lesson while offline, then it saves when back online", async () => {
     await page.getByRole("link", { name: "تسجيل درس" }).click();
     await expect(page.getByText("مأخوذ من المهمة الحالية.")).toBeVisible();
-    await expect(page.getByLabel("من الآية").first()).toHaveValue("6");
-    await page.getByText("ممتاز", { exact: true }).click();
+    await expect(page.getByLabel("من الآية")).toHaveValue("6");
+    await expect(page.getByLabel("إلى الآية")).toHaveValue("10");
+    await page.getByRole("group").getByText("ممتاز", { exact: true }).click();
 
     await page.context().setOffline(true);
     await page.getByRole("button", { name: "حفظ الدرس" }).click();
@@ -84,14 +91,14 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     ).toBeVisible(); // new assignment
   });
 
-  await test.step("picks a passage by page", async () => {
+  await test.step("an ayah past the end of the surah is caught", async () => {
     await page.getByRole("link", { name: "تسجيل درس" }).click();
-    await page.getByRole("radio", { name: "صفحة" }).first().click();
-    await page.getByLabel("من صفحة").fill("562");
-    await expect(page.getByText(/^= الملك ١–/)).toBeVisible();
-    await page.getByRole("radio", { name: "سورة" }).first().click();
-    await expect(page.getByLabel("السورة", { exact: true }).first()).toHaveValue("67");
-    await page.goto(studentUrl);
+    await page.getByLabel("السورة", { exact: true }).selectOption("1"); // Al-Fatiha: 7 ayahs
+    await page.getByLabel("إلى الآية").fill("9");
+    await page.getByRole("group").getByText("جيد", { exact: true }).click();
+    await page.getByRole("button", { name: "حفظ الدرس" }).click();
+    await expect(page.getByText("عدد آيات السورة أقل من ذلك")).toBeVisible();
+    await page.getByRole("link", { name: "رجوع" }).click();
   });
 
   await test.step("marks an assignment as done", async () => {

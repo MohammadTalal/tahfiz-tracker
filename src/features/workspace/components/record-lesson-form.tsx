@@ -2,31 +2,30 @@
 
 import {
   BookMarked,
-  BookOpen,
   Check,
+  ChevronDown,
   CircleAlert,
   History,
-  ListTodo,
   Loader2,
-  MessageSquareText,
   Repeat2,
   Save,
-  Star,
   WifiOff,
   type LucideIcon,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { TextAreaField, TextField } from "@/components/forms/field";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
+import { ayahCount } from "@/lib/quran/ayah-counts";
+import { formatPassage, type QuranLocale } from "@/lib/quran/format";
 import { suggestNext, type Passage } from "@/lib/quran/passage";
 import { cn } from "@/lib/utils";
 import { recordLesson } from "../actions";
 import { MISTAKES, RATINGS, recordLessonSchema, type RecordLessonInput } from "../schemas";
-import { type PassageDraft, PassageFields } from "./passage-fields";
 import { RATING_STYLE } from "./rating-style";
+import { type PassageDraft, SurahAyahFields } from "./surah-ayah-fields";
 
 type Rating = (typeof RATINGS)[number];
 type Mistake = (typeof MISTAKES)[number];
@@ -48,7 +47,8 @@ type FormState = {
 
 type Status = "idle" | "saving" | "offline" | "error";
 
-const DRAFT_VERSION = 1;
+// v2: passages stay inside one surah.
+const DRAFT_VERSION = 2;
 
 function today(): string {
   const d = new Date();
@@ -159,7 +159,6 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
   const tr = useTranslations("Rating");
   const tm = useTranslations("Mistake");
   const te = useTranslations("Errors");
-  const tc = useTranslations("Common");
   const router = useRouter();
   const draftKey = draftKeyFor(studentId);
 
@@ -169,6 +168,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Status>("idle");
   const [formError, setFormError] = useState<string | null>(null);
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const saving = useRef(false);
   // Set after a successful save so the reset form is not stored as a new draft.
   const skipNextPersist = useRef(false);
@@ -204,6 +204,8 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) next[issue.path.join(".")] ??= issue.message;
       setErrors(next);
+      // Show the extras when the problem is in there.
+      if (Object.keys(next).some((k) => !k.startsWith("passage") && k !== "rating")) setExtrasOpen(true);
       setFormError("invalid");
       setStatus("error");
       return;
@@ -235,6 +237,9 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
         return;
       }
       setErrors(result.fieldErrors ?? {});
+      if (Object.keys(result.fieldErrors ?? {}).some((k) => !k.startsWith("passage") && k !== "rating")) {
+        setExtrasOpen(true);
+      }
       setFormError(result.error);
       setStatus("error");
     } catch {
@@ -262,11 +267,22 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
   }
 
   const ratingGroup = useId();
+  const locale = useLocale() as QuranLocale;
+  const nextLabel = isComplete(state.nextMemorization)
+    ? formatPassage(state.nextMemorization, locale, ayahCount)
+    : null;
+  const extrasCount =
+    state.mistakes.length +
+    (state.parentFeedback.trim() ? 1 : 0) +
+    (state.privateNote.trim() ? 1 : 0) +
+    (state.assignRevision ? 1 : 0);
 
+  // Built for one phone screen: passage, rating, save. Everything optional
+  // sits behind "Extras".
   return (
     <form
       noValidate
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         void submit();
@@ -275,7 +291,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
       {restored && (
         <div
           role="status"
-          className="bg-info-soft text-info flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 text-sm"
+          className="bg-info-soft text-info flex items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-sm"
         >
           <span className="flex items-center gap-2">
             <History className="size-4" aria-hidden />
@@ -287,142 +303,193 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
         </div>
       )}
 
-      <FormCard icon={BookOpen} title={t("passage")}>
-        {defaultSource && !restored && (
-          <p className="bg-surface-tint text-muted-foreground -mt-1 rounded-lg px-3 py-2 text-sm">
-            {defaultSource === "assignment" ? t("fromAssignment") : t("suggested")}
-          </p>
-        )}
-        <PassageFields
+      <section className="bg-card flex flex-col gap-2 rounded-xl border p-3 shadow-(--shadow-soft) sm:p-4">
+        <SurahAyahFields
           value={state.passage}
           onChange={setPassage}
           errors={passageErrors(errors, "passage")}
         />
-        <TextField
-          label={t("date")}
-          type="date"
-          value={state.lessonDate}
-          onChange={(e) => update({ lessonDate: e.target.value })}
-          error={errors.lessonDate}
-          dir="ltr"
-          className="w-44"
-        />
-      </FormCard>
+        {defaultSource && !restored && (
+          <p className="text-muted-foreground text-xs">
+            {defaultSource === "assignment" ? t("fromAssignment") : t("suggested")}
+          </p>
+        )}
+      </section>
 
-      <FormCard icon={Star} title={t("rating")}>
-        <fieldset aria-describedby={errors.rating ? `${ratingGroup}-error` : undefined}>
-          <legend className="sr-only">{t("rating")}</legend>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-            {RATINGS.map((rating) => {
-              const { icon: Icon, selected } = RATING_STYLE[rating];
-              return (
-                <label
-                  key={rating}
-                  className={cn(
-                    "has-focus-visible:ring-ring hover:bg-surface-tint flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-2 py-2 text-center text-sm font-medium transition-colors duration-150 has-focus-visible:ring-2",
-                    selected,
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name={ratingGroup}
-                    value={rating}
-                    checked={state.rating === rating}
-                    onChange={() => update({ rating })}
-                    className="sr-only"
-                  />
-                  <Icon className="size-4.5" aria-hidden />
-                  {tr(rating)}
-                </label>
-              );
-            })}
-          </div>
-          {errors.rating && (
-            <p id={`${ratingGroup}-error`} role="alert" className="text-destructive mt-2 text-sm">
-              {te(errors.rating)}
-            </p>
-          )}
-        </fieldset>
-
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-muted-foreground mb-2 text-sm font-medium">
-            {t("mistakes")} <span className="text-subtle-foreground font-normal">({tc("optional")})</span>
-          </legend>
-          <div className="flex flex-wrap gap-2">
-            {MISTAKES.map((mistake) => (
+      <fieldset
+        className="bg-card flex flex-col gap-2 rounded-xl border p-3 shadow-(--shadow-soft) sm:p-4"
+        aria-describedby={errors.rating ? `${ratingGroup}-error` : undefined}
+      >
+        <legend className="sr-only">{t("rating")}</legend>
+        <p className="text-sm font-medium" aria-hidden>
+          {t("rating")}
+        </p>
+        <div className="grid grid-cols-5 gap-1.5">
+          {RATINGS.map((rating) => {
+            const { icon: Icon, selected } = RATING_STYLE[rating];
+            return (
               <label
-                key={mistake}
-                className="has-checked:border-warning has-checked:bg-warning-soft has-checked:text-warning has-focus-visible:ring-ring hover:bg-surface-tint flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm transition-colors duration-150 has-focus-visible:ring-2"
+                key={rating}
+                className={cn(
+                  "has-focus-visible:ring-ring hover:bg-surface-tint flex h-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-0.5 text-center text-[0.7rem] leading-tight font-medium transition-colors duration-150 has-focus-visible:ring-2 sm:text-sm",
+                  selected,
+                )}
               >
                 <input
-                  type="checkbox"
-                  checked={state.mistakes.includes(mistake)}
-                  onChange={(e) =>
-                    update({
-                      mistakes: e.target.checked
-                        ? [...state.mistakes, mistake]
-                        : state.mistakes.filter((m) => m !== mistake),
-                    })
-                  }
-                  className="peer sr-only"
+                  type="radio"
+                  name={ratingGroup}
+                  value={rating}
+                  checked={state.rating === rating}
+                  onChange={() => update({ rating })}
+                  className="sr-only"
                 />
-                <Check className="hidden size-3.5 peer-checked:block" aria-hidden />
-                {tm(mistake)}
+                <Icon className="size-5" aria-hidden />
+                {tr(rating)}
               </label>
-            ))}
-          </div>
-        </fieldset>
-      </FormCard>
-
-      <FormCard icon={MessageSquareText} title={t("notes")}>
-        <div className="grid gap-4 md:grid-cols-2">
-          <TextAreaField
-            label={t("parentFeedback")}
-            help={t("parentFeedbackHelp")}
-            value={state.parentFeedback}
-            onChange={(e) => update({ parentFeedback: e.target.value })}
-            maxLength={2000}
-            rows={3}
-            error={errors.parentFeedback}
-          />
-          <TextAreaField
-            label={t("privateNote")}
-            help={t("privateNoteHelp")}
-            value={state.privateNote}
-            onChange={(e) => update({ privateNote: e.target.value })}
-            maxLength={5000}
-            rows={3}
-            error={errors.privateNote}
-          />
+            );
+          })}
         </div>
-      </FormCard>
+        {errors.rating && (
+          <p id={`${ratingGroup}-error`} role="alert" className="text-destructive text-sm">
+            {te(errors.rating)}
+          </p>
+        )}
+      </fieldset>
 
-      <FormCard icon={ListTodo} title={t("nextSteps")}>
-        <ToggleBlock
-          label={t("nextMemorization")}
-          icon={BookMarked}
-          checked={state.assignNext}
-          onChange={(assignNext) => update({ assignNext })}
+      {/* Next memorization, pre-filled; one tap turns it off. */}
+      {nextLabel && (
+        <label
+          className={cn(
+            "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 text-sm transition-colors duration-150",
+            state.assignNext ? "border-primary/30 bg-surface-tint" : "bg-card",
+          )}
         >
-          <PassageFields
-            value={state.nextMemorization}
-            onChange={(nextMemorization) => update({ nextMemorization, nextTouched: true })}
-            errors={passageErrors(errors, "nextMemorization")}
+          <input
+            type="checkbox"
+            checked={state.assignNext}
+            onChange={(e) => update({ assignNext: e.target.checked })}
+            className="accent-primary size-5"
           />
-        </ToggleBlock>
-        <ToggleBlock
-          label={t("nextRevision")}
-          icon={Repeat2}
-          checked={state.assignRevision}
-          onChange={(assignRevision) => update({ assignRevision })}
+          <BookMarked className="text-primary size-4 shrink-0" aria-hidden />
+          <span className="flex-1">
+            {t("nextMemorization")}:{" "}
+            <span className={cn("font-semibold", locale === "ar" && "font-quran text-base")}>
+              {nextLabel}
+            </span>
+          </span>
+        </label>
+      )}
+
+      <div className="bg-card rounded-xl border">
+        <button
+          type="button"
+          aria-expanded={extrasOpen}
+          onClick={() => setExtrasOpen((open) => !open)}
+          className="flex min-h-12 w-full items-center gap-2 px-3 text-sm font-medium"
         >
-          <PassageFields
-            value={state.nextRevision}
-            onChange={(nextRevision) => update({ nextRevision })}
-            errors={passageErrors(errors, "nextRevision")}
+          {t("extras")}
+          {extrasCount > 0 && (
+            <span className="bg-primary text-primary-foreground grid size-5 place-items-center rounded-full text-xs">
+              {extrasCount}
+            </span>
+          )}
+          <span className="text-muted-foreground text-xs font-normal">{t("extrasHint")}</span>
+          <ChevronDown
+            className={cn(
+              "text-muted-foreground ms-auto size-4 transition-transform",
+              extrasOpen && "rotate-180",
+            )}
+            aria-hidden
           />
-        </ToggleBlock>
-      </FormCard>
+        </button>
+
+        {extrasOpen && (
+          <div className="flex flex-col gap-4 border-t p-3">
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-muted-foreground mb-2 text-sm font-medium">{t("mistakes")}</legend>
+              <div className="flex flex-wrap gap-2">
+                {MISTAKES.map((mistake) => (
+                  <label
+                    key={mistake}
+                    className="has-checked:border-warning has-checked:bg-warning-soft has-checked:text-warning has-focus-visible:ring-ring hover:bg-surface-tint flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm transition-colors duration-150 has-focus-visible:ring-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={state.mistakes.includes(mistake)}
+                      onChange={(e) =>
+                        update({
+                          mistakes: e.target.checked
+                            ? [...state.mistakes, mistake]
+                            : state.mistakes.filter((m) => m !== mistake),
+                        })
+                      }
+                      className="peer sr-only"
+                    />
+                    <Check className="hidden size-3.5 peer-checked:block" aria-hidden />
+                    {tm(mistake)}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <TextAreaField
+              label={t("parentFeedback")}
+              help={t("parentFeedbackHelp")}
+              value={state.parentFeedback}
+              onChange={(e) => update({ parentFeedback: e.target.value })}
+              maxLength={2000}
+              rows={2}
+              error={errors.parentFeedback}
+            />
+            <TextAreaField
+              label={t("privateNote")}
+              help={t("privateNoteHelp")}
+              value={state.privateNote}
+              onChange={(e) => update({ privateNote: e.target.value })}
+              maxLength={5000}
+              rows={2}
+              error={errors.privateNote}
+            />
+
+            <ToggleBlock
+              label={t("nextMemorization")}
+              icon={BookMarked}
+              checked={state.assignNext}
+              onChange={(assignNext) => update({ assignNext })}
+            >
+              <SurahAyahFields
+                compact
+                value={state.nextMemorization}
+                onChange={(nextMemorization) => update({ nextMemorization, nextTouched: true })}
+                errors={passageErrors(errors, "nextMemorization")}
+              />
+            </ToggleBlock>
+            <ToggleBlock
+              label={t("nextRevision")}
+              icon={Repeat2}
+              checked={state.assignRevision}
+              onChange={(assignRevision) => update({ assignRevision })}
+            >
+              <SurahAyahFields
+                compact
+                value={state.nextRevision}
+                onChange={(nextRevision) => update({ nextRevision })}
+                errors={passageErrors(errors, "nextRevision")}
+              />
+            </ToggleBlock>
+
+            <TextField
+              label={t("date")}
+              type="date"
+              value={state.lessonDate}
+              onChange={(e) => update({ lessonDate: e.target.value })}
+              error={errors.lessonDate}
+              dir="ltr"
+              className="w-44"
+            />
+          </div>
+        )}
+      </div>
 
       {status === "offline" && (
         <p
@@ -461,21 +528,6 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
         </div>
       </div>
     </form>
-  );
-}
-
-/** A titled white block grouping one part of the form. */
-function FormCard({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
-  return (
-    <section className="bg-card flex flex-col gap-4 rounded-xl border p-4 shadow-(--shadow-soft) sm:p-5">
-      <h2 className="flex items-center gap-2 font-semibold">
-        <span className="bg-mint text-primary grid size-7 place-items-center rounded-md" aria-hidden>
-          <Icon className="size-4" />
-        </span>
-        {title}
-      </h2>
-      {children}
-    </section>
   );
 }
 
