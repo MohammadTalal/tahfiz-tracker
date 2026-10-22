@@ -58,8 +58,8 @@ export function SurahAyahFields({
           aria-invalid={errors.startSurah ? true : undefined}
           onChange={(e) => {
             const surah = Number(e.target.value);
-            // A new surah starts from its first ayah; the teacher types the end.
-            onChange({ startSurah: surah, startAyah: 1, endSurah: surah, endAyah: undefined });
+            // A new surah defaults to the whole surah: first to last ayah.
+            onChange({ startSurah: surah, startAyah: 1, endSurah: surah, endAyah: ayahCount(surah) });
           }}
           className="h-12 text-base"
         >
@@ -86,6 +86,7 @@ export function SurahAyahFields({
         <AyahInput
           id={`${id}-to`}
           label={t("toAyah")}
+          placeholder={count !== undefined ? String(count) : undefined}
           value={value.endAyah}
           invalid={!!errors.endAyah}
           onChange={(endAyah) => onChange({ ...value, endAyah, endSurah: value.startSurah })}
@@ -109,12 +110,14 @@ function AyahInput({
   label,
   value,
   invalid,
+  placeholder,
   onChange,
 }: {
   id: string;
   label: string;
   value?: number;
   invalid: boolean;
+  placeholder?: string;
   onChange: (value: number | undefined) => void;
 }) {
   return (
@@ -128,6 +131,7 @@ function AyahInput({
         enterKeyHint="next"
         dir="ltr"
         autoComplete="off"
+        placeholder={placeholder}
         value={value ?? ""}
         onChange={(e) => onChange(toAyah(e.target.value))}
         onFocus={(e) => e.target.select()}

@@ -52,7 +52,9 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await expect(page.getByRole("button", { name: "حفظ الدرس" })).toBeInViewport();
 
     await page.getByLabel("السورة", { exact: true }).selectOption("67"); // by value
+    // Picking a surah fills the whole surah: ayah 1 to its last ayah.
     await expect(page.getByLabel("من الآية")).toHaveValue("1");
+    await expect(page.getByLabel("إلى الآية")).toHaveValue("30");
     await page.getByLabel("إلى الآية").fill("5");
     await page.getByRole("group").getByText("جيد", { exact: true }).click();
     // Next memorization is suggested automatically from the passage.
@@ -61,7 +63,6 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     // Notes are optional, behind "Extras".
     await page.getByRole("button", { name: /إضافات/ }).click();
     await page.getByLabel("ملاحظات لولي الأمر").fill("أحسنت يا عمر");
-    await page.getByLabel("ملاحظة خاصة").fill("ملاحظة سرية للمعلم");
     await page.getByRole("button", { name: "حفظ الدرس" }).click();
 
     await expect(page).toHaveURL(studentUrl);
@@ -69,7 +70,6 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     const main = page.getByRole("main");
     await expect(main.getByRole("listitem").filter({ hasText: "الملك ١–٥" })).toBeVisible();
     await expect(main.getByRole("listitem").filter({ hasText: "الملك ٦–١٠" })).toBeVisible();
-    await expect(main.locator("ol").getByText("ملاحظة سرية للمعلم")).toBeVisible();
   });
 
   await test.step("records the next lesson while offline, then it saves when back online", async () => {
@@ -114,7 +114,6 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     expect(response.headers()["content-type"]).toContain("text/csv");
     const csv = await response.text();
     expect(csv).toContain("الملك ١–٥");
-    expect(csv).toContain("ملاحظة سرية للمعلم");
   });
 
   await test.step("invites a parent with a share link", async () => {
@@ -151,7 +150,6 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await expect(parent.getByRole("heading", { level: 1, name: "عمر" })).toBeVisible();
     await expect(parent.getByText("الملك ١–٥")).toBeVisible();
     await expect(parent.getByText("أحسنت يا عمر")).toBeVisible();
-    await expect(parent.getByText("ملاحظة سرية للمعلم")).toHaveCount(0);
   });
 
   await test.step("the invite link cannot be used twice", async () => {
@@ -163,7 +161,6 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
   await test.step("parent cannot open the staff pages", async () => {
     await parent.goto(studentUrl);
     await expect(parent.getByText("غير موجود، أو ليست لديك صلاحية.")).toBeVisible();
-    await expect(parent.getByText("ملاحظة سرية للمعلم")).toHaveCount(0);
   });
   await parentContext.close();
 

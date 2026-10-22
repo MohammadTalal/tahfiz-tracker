@@ -37,7 +37,6 @@ type FormState = {
   rating?: Rating;
   mistakes: Mistake[];
   parentFeedback: string;
-  privateNote: string;
   assignNext: boolean;
   nextMemorization: PassageDraft;
   nextTouched: boolean;
@@ -71,7 +70,6 @@ function initialState(defaultPassage: Passage | null): FormState {
     passage: defaultPassage ?? {},
     mistakes: [],
     parentFeedback: "",
-    privateNote: "",
     assignNext: isComplete(nextMemorization),
     nextMemorization,
     nextTouched: false,
@@ -89,7 +87,7 @@ function toInput(studentId: string, assignmentId: string | null, s: FormState): 
     rating: s.rating as Rating,
     mistakes: s.mistakes,
     parentFeedback: s.parentFeedback,
-    privateNote: s.privateNote,
+    privateNote: "",
     nextMemorization: s.assignNext ? (s.nextMemorization as Passage) : null,
     nextRevision: s.assignRevision ? (s.nextRevision as Passage) : null,
     completesAssignmentId: assignmentId,
@@ -272,10 +270,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
     ? formatPassage(state.nextMemorization, locale, ayahCount)
     : null;
   const extrasCount =
-    state.mistakes.length +
-    (state.parentFeedback.trim() ? 1 : 0) +
-    (state.privateNote.trim() ? 1 : 0) +
-    (state.assignRevision ? 1 : 0);
+    state.mistakes.length + (state.parentFeedback.trim() ? 1 : 0) + (state.assignRevision ? 1 : 0);
 
   // Built for one phone screen: passage, rating, save. Everything optional
   // sits behind "Extras".
@@ -440,15 +435,6 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
               maxLength={2000}
               rows={2}
               error={errors.parentFeedback}
-            />
-            <TextAreaField
-              label={t("privateNote")}
-              help={t("privateNoteHelp")}
-              value={state.privateNote}
-              onChange={(e) => update({ privateNote: e.target.value })}
-              maxLength={5000}
-              rows={2}
-              error={errors.privateNote}
             />
 
             <ToggleBlock
