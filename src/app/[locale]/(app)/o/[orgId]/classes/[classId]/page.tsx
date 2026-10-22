@@ -42,11 +42,12 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
 
   const t = await getTranslations("Class");
   const to = await getTranslations("Org");
+  const tn = await getTranslations("OrgNav");
 
   return (
     <>
       <PageHeader
-        back={{ href: `/o/${orgId}`, label: org.name }}
+        back={{ href: `/o/${orgId}/classes`, label: tn("classes") }}
         leading={
           <span className="bg-mint text-primary grid size-12 place-items-center rounded-xl" aria-hidden>
             <Users className="size-6" />

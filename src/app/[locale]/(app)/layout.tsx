@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/features/auth/actions";
 import { getProfileName } from "@/features/workspace/queries";
+import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -38,12 +39,15 @@ async function UserMenu() {
   const [name, t] = await Promise.all([getProfileName(user.id), getTranslations("Auth")]);
   return (
     <div className="flex items-center gap-1 border-s ps-2 sm:ps-3">
-      {name && (
-        <span className="hidden items-center gap-2 md:flex">
-          <InitialAvatar name={name} size="sm" />
-          <span className="max-w-40 truncate text-sm font-medium">{name}</span>
-        </span>
-      )}
+      <Link
+        href="/account"
+        className="hover:bg-surface-tint flex items-center gap-2 rounded-full p-0.5 pe-0.5 transition-colors duration-150 md:pe-3"
+        aria-label={t("account")}
+        title={t("account")}
+      >
+        <InitialAvatar name={name || user.email || ""} size="sm" />
+        {name && <span className="hidden max-w-40 truncate text-sm font-medium md:inline">{name}</span>}
+      </Link>
       <form action={signOut}>
         <Button type="submit" variant="ghost" size="sm" aria-label={t("signOut")} title={t("signOut")}>
           <LogOut className="size-4 rtl:rotate-180" aria-hidden />

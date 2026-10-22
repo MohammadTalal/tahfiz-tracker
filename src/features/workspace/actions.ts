@@ -7,7 +7,7 @@ import { type ActionState, errorState, formObject, invalidState } from "@/lib/ac
 import { getCurrentUser } from "@/lib/auth/session";
 import { idSchema } from "@/lib/ids";
 import { createClient } from "@/lib/supabase/server";
-import { createOrganizationSchema, nameSchema, recordLessonSchema } from "./schemas";
+import { accountSchema, createOrganizationSchema, nameSchema, recordLessonSchema } from "./schemas";
 
 // Every action re-checks the session. Permissions are enforced by RLS and the
 // database functions; a "not allowed" result just maps their error.
@@ -36,6 +36,29 @@ export async function createOrganization(_prev: ActionState, formData: FormData)
   if (error || !data) return errorState();
 
   return redirect({ href: `/o/${data}`, locale: await getLocale() });
+}
+
+/** Saves the user's own name and (optional) phone number. */
+export async function updateAccount(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = accountSchema.safeParse(formObject(formData));
+  if (!parsed.success) return invalidState(parsed.error);
+  const ctx = await signedInClient();
+  if (!ctx) return errorState("not_allowed");
+  const { supabase, user } = ctx;
+
+  const profile = await supabase
+    .from("profiles")
+    .update({ display_name: parsed.data.displayName })
+    .eq("id", user.id);
+  if (profile.error) return errorState();
+
+  const contact = parsed.data.phone
+    ? await supabase.from("profile_contacts").upsert({ user_id: user.id, phone: parsed.data.phone })
+    : await supabase.from("profile_contacts").delete().eq("user_id", user.id);
+  if (contact.error) return errorState();
+
+  refresh();
+  return { status: "success" };
 }
 
 export async function createClass(

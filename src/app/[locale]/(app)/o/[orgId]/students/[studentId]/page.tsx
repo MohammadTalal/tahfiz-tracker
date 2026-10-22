@@ -45,6 +45,7 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
     getParents(studentId),
   ]);
   const t = await getTranslations("Student");
+  const tn = await getTranslations("OrgNav");
   const recordHref = `/o/${orgId}/students/${studentId}/record`;
   const currentMemorization = assignments.find((a) => a.assignment_type === "memorization");
   const lastLesson = lessons[0];
@@ -59,7 +60,7 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
   return (
     <>
       <PageHeader
-        back={{ href: `/o/${orgId}`, label: org.name }}
+        back={{ href: `/o/${orgId}/students`, label: tn("students") }}
         leading={<InitialAvatar name={student.display_name} size="lg" />}
         title={student.display_name}
         description={student.status === "archived" ? t("archivedBadge") : undefined}

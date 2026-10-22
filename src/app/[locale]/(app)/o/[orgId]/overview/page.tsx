@@ -37,11 +37,12 @@ export default async function OverviewPage({ params }: PageProps<"/[locale]/o/[o
 
   const t = await getTranslations("Overview");
   const to = await getTranslations("Org");
+  const tn = await getTranslations("OrgNav");
 
   return (
     <>
       <PageHeader
-        back={{ href: `/o/${orgId}`, label: org.name }}
+        back={{ href: `/o/${orgId}/teachers`, label: tn("teachers") }}
         title={t("title")}
         description={to("summary", { classes: tree.length, students: allStudents.length })}
       />

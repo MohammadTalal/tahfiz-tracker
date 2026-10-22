@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -45,11 +46,14 @@ export async function getWorkspace(userId: string) {
   };
 }
 
-/** The organization plus the current user's active roles in it, or null if not a member. */
-export async function getOrganizationForStaff(orgId: string, userId: string) {
+/**
+ * The organization plus the current user's active roles in it, or null if not
+ * a member. Cached per request: the org layout and its pages both ask.
+ */
+export const getOrganizationForStaff = cache(async (orgId: string, userId: string) => {
   const supabase = await createClient();
   const [org, roles] = await Promise.all([
-    supabase.from("organizations").select("id, name").eq("id", orgId).maybeSingle(),
+    supabase.from("organizations").select("id, name, timezone").eq("id", orgId).maybeSingle(),
     supabase
       .from("organization_memberships")
       .select("role")
@@ -62,14 +66,14 @@ export async function getOrganizationForStaff(orgId: string, userId: string) {
   if (!org.data || roles.data.length === 0) return null;
   const roleList = roles.data.map((r) => r.role);
   return { ...org.data, roles: roleList, isAdmin: roleList.includes("admin") };
-}
+});
 
-/** Classes shown on the org page: all of them for admins, only taught classes for teachers. */
+/** Classes with their teachers: all of them for admins, only taught classes for teachers. */
 export async function getClasses(orgId: string, userId: string, isAdmin: boolean) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("classes")
-    .select("id, name, class_teachers(teacher_user_id), class_enrollments(status)")
+    .select("id, name, class_teachers(teacher_user_id, profiles(display_name)), class_enrollments(status)")
     .eq("organization_id", orgId)
     .eq("status", "active")
     .order("name");
@@ -79,6 +83,9 @@ export async function getClasses(orgId: string, userId: string, isAdmin: boolean
       id: c.id,
       name: c.name,
       studentCount: c.class_enrollments.filter((e) => e.status === "active").length,
+      teachers: c.class_teachers
+        .map((t) => ({ id: t.teacher_user_id, name: t.profiles?.display_name ?? "" }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
       taughtByMe: c.class_teachers.some((t) => t.teacher_user_id === userId),
     }))
     .filter((c) => isAdmin || c.taughtByMe);
@@ -197,6 +204,7 @@ export async function getLessonCount(studentId: string) {
 export type TeacherSummary = {
   id: string;
   name: string;
+  phone: string | null;
   classes: { id: string; name: string; studentCount: number }[];
 };
 
@@ -206,7 +214,7 @@ export async function getTeachers(orgId: string): Promise<TeacherSummary[]> {
   const [members, classes] = await Promise.all([
     supabase
       .from("organization_memberships")
-      .select("user_id, profiles(display_name)")
+      .select("user_id, profiles(display_name, profile_contacts(phone))")
       .eq("organization_id", orgId)
       .eq("role", "teacher")
       .eq("status", "active"),
@@ -224,6 +232,7 @@ export async function getTeachers(orgId: string): Promise<TeacherSummary[]> {
     .map((m) => ({
       id: m.user_id,
       name: m.profiles?.display_name ?? "",
+      phone: m.profiles?.profile_contacts?.phone ?? null,
       classes: classes.data
         .filter((c) => c.class_teachers.some((t) => t.teacher_user_id === m.user_id))
         .map((c) => ({
@@ -362,4 +371,82 @@ export async function getOrganizationTree(orgId: string) {
       .map((e) => e.students!)
       .sort((a, b) => a.display_name.localeCompare(b.display_name)),
   }));
+}
+
+export type DirectoryStudent = Omit<StudentProgress, "parents"> & {
+  classes: { id: string; name: string }[];
+  teachers: string[];
+  parents: (StudentProgress["parents"][number] & { phone: string | null })[];
+};
+
+/**
+ * Students the user may see (all for admins, their own for teachers; RLS) with
+ * class, teachers, parents and phone numbers, plus their current progress.
+ */
+export async function getStudentDirectory(orgId: string): Promise<DirectoryStudent[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("students")
+    .select(
+      "id, display_name, class_enrollments(status, classes(id, name, class_teachers(profiles(display_name)))), parent_student_relationships(status, profiles(display_name, profile_contacts(phone)))",
+    )
+    .eq("organization_id", orgId)
+    .eq("status", "active")
+    .order("display_name");
+  if (error) throw error;
+
+  const progress = new Map((await getStudentsProgress(data)).map((p) => [p.id, p]));
+  return data.map((s) => {
+    const classes = s.class_enrollments
+      .filter((e) => e.status === "active" && e.classes)
+      .map((e) => e.classes!);
+    return {
+      ...progress.get(s.id)!,
+      classes: classes.map((c) => ({ id: c.id, name: c.name })),
+      teachers: [
+        ...new Set(classes.flatMap((c) => c.class_teachers.map((t) => t.profiles?.display_name ?? ""))),
+      ].filter(Boolean),
+      parents: s.parent_student_relationships
+        .filter((p) => p.status !== "revoked")
+        .map((p) => ({
+          name: p.profiles?.display_name ?? "",
+          status: p.status,
+          phone: p.profiles?.profile_contacts?.phone ?? null,
+        })),
+    };
+  });
+}
+
+/** Lessons from `since` onwards that the user may see, newest first. */
+export async function getRecentLessons(orgId: string, since: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("memorization_records")
+    .select(
+      "id, student_id, teacher_user_id, lesson_date, performance_rating, start_surah, start_ayah, end_surah, end_ayah, students(display_name), profiles!memorization_records_teacher_user_id_fkey(display_name)",
+    )
+    .eq("organization_id", orgId)
+    .eq("status", "active")
+    .gte("lesson_date", since)
+    .order("lesson_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  return data.map(({ students, profiles, ...l }) => ({
+    ...l,
+    studentName: students?.display_name ?? "",
+    teacherName: profiles?.display_name ?? "",
+  }));
+}
+
+/** The current user's phone number, or "" if none. */
+export async function getOwnPhone(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profile_contacts")
+    .select("phone")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.phone ?? "";
 }

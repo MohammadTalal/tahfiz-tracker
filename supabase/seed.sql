@@ -69,6 +69,10 @@ insert into public.parent_student_relationships (organization_id, parent_user_id
 values ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000003',
         'd3000000-0000-0000-0000-000000000001', 'father', 'verified');
 
+insert into public.profile_contacts (user_id, phone) values
+  ('d0000000-0000-0000-0000-000000000002', '+1 604 555 0102'),
+  ('d0000000-0000-0000-0000-000000000003', '+1 604 555 0103');
+
 insert into public.memorization_records (organization_id, student_id, teacher_user_id, lesson_date,
   start_surah, start_ayah, end_surah, end_ayah, performance_rating, parent_visible_feedback, idempotency_key, created_by)
 values

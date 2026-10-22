@@ -53,7 +53,8 @@
     "reset_link_expired": "انتهت صلاحية رابط الاستعادة أو فُتح في متصفح مختلف. اطلب رابطًا جديدًا وافتحه على الجهاز نفسه.",
     "same_password": "يجب أن تختلف كلمة المرور الجديدة عن الحالية.",
     "weak_password": "كلمة المرور سهلة التخمين. استخدم كلمة أطول تحتوي على حروف وأرقام.",
-    "duplicate_student": "يوجد طالب بهذا الاسم. إن كان هو نفسه فاختره من قائمة «طالب بدون حلقة»، وإن كان طالبًا آخر فاضغط «إضافة» مرة أخرى."
+    "duplicate_student": "يوجد طالب بهذا الاسم. إن كان هو نفسه فاختره من قائمة «طالب بدون حلقة»، وإن كان طالبًا آخر فاضغط «إضافة» مرة أخرى.",
+    "invalid_phone": "أدخل رقم هاتف صحيحًا، مثل ‎+1 604 555 0100"
   },
   "Auth": {
     "loginTitle": "تسجيل الدخول",
@@ -77,7 +78,8 @@
     "checkEmail": "تحقق من بريدك لتأكيد الحساب، ثم سجّل الدخول.",
     "linkInvalid": "الرابط غير صالح أو منتهي الصلاحية. حاول مرة أخرى.",
     "signOut": "تسجيل الخروج",
-    "agreement": "بإنشائك حسابًا فإنك توافق على <terms>شروط الاستخدام</terms> و<privacy>سياسة الخصوصية</privacy>."
+    "agreement": "بإنشائك حسابًا فإنك توافق على <terms>شروط الاستخدام</terms> و<privacy>سياسة الخصوصية</privacy>.",
+    "account": "حسابي"
   },
   "Nav": {
     "home": "الرئيسية"
@@ -314,5 +316,92 @@
     "noParent": "لا ولي أمر",
     "empty": "لا شيء بعد",
     "emptyHint": "أنشئ حلقات وادعُ معلمين لترى جهتك هنا."
+  },
+  "OrgNav": {
+    "dashboard": "الرئيسية",
+    "classes": "الحلقات",
+    "teachers": "المعلمون",
+    "students": "الطلاب"
+  },
+  "Classes": {
+    "title": "الحلقات",
+    "myTitle": "حلقاتي",
+    "teachers": "المعلمون",
+    "noTeacher": "لا يوجد معلم"
+  },
+  "Teachers": {
+    "title": "المعلمون",
+    "summary": "{count, plural, =0 {لا يوجد معلمون بعد} one {معلم واحد} two {معلمان} few {# معلمين} many {# معلمًا} other {# معلم}}",
+    "noPhone": "لا يوجد رقم هاتف",
+    "students": "الطلاب",
+    "lessonsThisWeek": "دروس هذا الأسبوع"
+  },
+  "Students": {
+    "title": "الطلاب",
+    "myTitle": "طلابي",
+    "summary": "{count, plural, =0 {لا طلاب} one {طالب واحد} two {طالبان} few {# طلاب} many {# طالبًا} other {# طالب}}",
+    "empty": "لا يوجد طلاب بعد.",
+    "emptyHint": "أضف الطلاب من صفحة الحلقة.",
+    "search": "بحث",
+    "searchPlaceholder": "ابحث باسم الطالب أو ولي الأمر أو المعلم…",
+    "filterClass": "تصفية حسب الحلقة",
+    "allClasses": "كل الحلقات",
+    "withoutClass": "بدون حلقة",
+    "showing": "{shown} من {total}",
+    "noMatches": "لا نتائج مطابقة.",
+    "memorizing": "يحفظ:",
+    "lastLesson": "آخر درس:",
+    "noLessons": "لا دروس بعد",
+    "classAndTeacher": "الحلقة والمعلم",
+    "parents": "أولياء الأمور",
+    "noParent": "لا ولي أمر",
+    "pending": "بانتظار التأكيد"
+  },
+  "Contact": {
+    "call": "اتصال بـ {name}",
+    "whatsapp": "واتساب {name}"
+  },
+  "Account": {
+    "title": "حسابي",
+    "back": "الرئيسية",
+    "name": "الاسم",
+    "phone": "رقم الهاتف (اختياري)",
+    "phoneHelp": "يظهر فقط لمشرفي جهتك ولمعلمي أبنائك.",
+    "save": "حفظ",
+    "saved": "تم الحفظ"
+  },
+  "OrgDashboard": {
+    "greeting": "السلام عليكم ورحمة الله",
+    "weekNone": "لم تُسجَّل دروس هذا الأسبوع بعد. بداية موفقة!",
+    "weekSummary": "هذا الأسبوع: {lessons, plural, one {درس واحد} two {درسان} few {# دروس} many {# درسًا} other {# درس}} مع {students, plural, one {طالب واحد} two {طالبين} few {# طلاب} many {# طالبًا} other {# طالب}}. بارك الله في الجهود.",
+    "statStudents": "الطلاب",
+    "statMyStudents": "طلابي",
+    "statClasses": "الحلقات",
+    "statMyClasses": "حلقاتي",
+    "statTeachers": "المعلمون",
+    "statWeekLessons": "دروس آخر ٧ أيام",
+    "vsLastWeek": "{count} عن الأسبوع الماضي",
+    "activityTitle": "النشاط في آخر أسبوعين",
+    "lessonsCount": "{count, plural, =0 {لا دروس} one {درس واحد} two {درسان} few {# دروس} many {# درسًا} other {# درس}}",
+    "attentionTitle": "يحتاجون متابعة",
+    "attentionNone": "كل الطلاب لهم دروس حديثة. أحسنتم!",
+    "reasonNever": "لا دروس بعد",
+    "reasonStale": "منذ {days} أيام",
+    "reasonWeak": "آخر درس يحتاج مراجعة",
+    "andMore": "و{count} آخرون…",
+    "recentTitle": "أحدث الدروس",
+    "recentNone": "لا دروس في آخر أسبوعين.",
+    "starsTitle": "نجوم الأسبوع",
+    "starsNone": "تظهر هنا أسماء أصحاب التقدير «ممتاز» هذا الأسبوع.",
+    "excellentCount": "{count, plural, one {ممتاز مرة} two {ممتاز مرتين} other {ممتاز # مرات}}",
+    "todoTitle": "مهام الإعداد",
+    "todoNone": "كل شيء مُعدّ. ما شاء الله!",
+    "todoNoClasses": "أنشئ أول حلقة",
+    "todoNoTeachers": "ادعُ أول معلم",
+    "todoClassesNoTeacher": "{count, plural, one {حلقة بلا معلم} two {حلقتان بلا معلم} other {# حلقات بلا معلم}}",
+    "todoIdleTeachers": "{count, plural, one {معلم غير مُسند} two {معلمان غير مُسندين} other {# معلمين غير مُسندين}}",
+    "todoStudentsNoClass": "{count, plural, one {طالب بدون حلقة} two {طالبان بدون حلقة} other {# طلاب بدون حلقة}}",
+    "todoNoParents": "{count, plural, one {طالب بلا ولي أمر مرتبط} two {طالبان بلا ولي أمر مرتبط} other {# طلاب بلا ولي أمر مرتبط}}",
+    "myClassesTitle": "حلقاتي"
   }
 }

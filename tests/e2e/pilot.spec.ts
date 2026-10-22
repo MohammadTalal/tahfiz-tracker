@@ -21,10 +21,16 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await page.getByLabel("الاسم", { exact: true }).fill("حلقة الاختبار");
     await expect(page.getByLabel("أنا أيضًا أدرّس الطلاب هنا")).toBeChecked();
     await page.getByRole("button", { name: "إنشاء" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "حلقة الاختبار" })).toBeVisible();
+    // Lands on the organization's dashboard, greeted by name.
+    await expect(page.getByRole("heading", { level: 1, name: "الأستاذ سعيد" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "حلقة الاختبار" })).toBeVisible();
   });
 
   await test.step("adds a class and a student", async () => {
+    await page
+      .getByRole("navigation", { name: "حلقة الاختبار" })
+      .getByRole("link", { name: "الحلقات" })
+      .click();
     await page.getByLabel("حلقة جديدة").fill("حلقة الفجر");
     await page.getByRole("button", { name: "إضافة حلقة" }).click();
     // First match is the class card; the teacher list links to it too.
@@ -216,6 +222,59 @@ test("a teacher adds a student to their own class but cannot export", async ({ p
   expect(response.status()).toBe(403);
 });
 
+test("an admin moves between the dashboard, classes, teachers and students", async ({ page }) => {
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  const nav = page.getByRole("navigation", { name: "مسجد النور" });
+
+  // Dashboard: greeting, this week's activity and the latest lessons.
+  await expect(page.getByRole("heading", { level: 1, name: "Imam Khalid" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "النشاط في آخر أسبوعين" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "أحدث الدروس" })).toBeVisible();
+
+  // Classes: each class with its teachers.
+  await nav.getByRole("link", { name: "الحلقات" }).click();
+  const hifzB = page.getByRole("link", { name: /حلقة ب/ });
+  await expect(hifzB.getByText("Ustadha Maryam")).toBeVisible();
+
+  // Teachers: classes, student counts and phone numbers.
+  await nav.getByRole("link", { name: "المعلمون" }).click();
+  const maryam = page.getByRole("listitem").filter({ hasText: "Ustadha Maryam" }).first();
+  await expect(maryam.getByRole("link", { name: /حلقة ب/ })).toBeVisible();
+  await expect(maryam.getByRole("link", { name: "اتصال بـ Ustadha Maryam" })).toBeVisible();
+
+  // Students: class, teacher, parent and the parent's phone; search narrows the list.
+  await nav.getByRole("link", { name: "الطلاب" }).click();
+  await page.getByLabel("بحث").fill("Abu Ahmad");
+  await expect(page.getByRole("link", { name: "أحمد", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "فاطمة" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "اتصال بـ Abu Ahmad" })).toHaveAttribute(
+    "href",
+    "tel:+16045550103",
+  );
+});
+
+test("anyone can save their phone number on their account page", async ({ page }) => {
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("other@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.getByRole("link", { name: "حسابي" }).click();
+
+  await page.getByLabel("رقم الهاتف (اختياري)").fill("call me");
+  await page.getByRole("button", { name: "حفظ" }).click();
+  await expect(page.getByText("أدخل رقم هاتف صحيحًا")).toBeVisible();
+
+  await page.getByLabel("رقم الهاتف (اختياري)").fill("+44 20 7946 0000");
+  await page.getByRole("button", { name: "حفظ" }).click();
+  await expect(page.getByText("تم الحفظ")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("رقم الهاتف (اختياري)")).toHaveValue("+44 20 7946 0000");
+});
+
 test("an admin archives a student without a class", async ({ page }) => {
   await page.goto("/ar/login");
   await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
@@ -230,7 +289,8 @@ test("an admin archives a student without a class", async ({ page }) => {
   await page.getByRole("button", { name: `إخراج ${name} من هذه الحلقة` }).click();
   await expect(page.getByRole("link", { name })).toHaveCount(0);
 
-  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001");
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/students");
+  await page.getByLabel("تصفية حسب الحلقة").selectOption({ label: "بدون حلقة" });
   await expect(page.getByRole("link", { name })).toBeVisible();
   await page.getByRole("button", { name: `أرشفة ${name}` }).click();
   await expect(page.getByRole("link", { name })).toHaveCount(0);
@@ -251,6 +311,7 @@ test("an invited teacher joins the organization even when the email is confirmed
   await page.getByLabel("كلمة المرور").fill("password123");
   await page.getByRole("button", { name: "دخول" }).click();
   await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.getByRole("link", { name: "المعلمون" }).click();
   await page.getByRole("button", { name: "دعوة معلم" }).click();
   const inviteUrl = await page.getByRole("textbox", { name: "دعوة معلم" }).inputValue();
 
@@ -276,15 +337,18 @@ test("an invited teacher joins the organization even when the email is confirmed
   await laptop.getByRole("button", { name: "دخول" }).click();
   await expect(laptop).toHaveURL(/\/ar\/invite\//);
   await laptop.getByRole("button", { name: "قبول الدعوة" }).click();
-  await expect(laptop.getByRole("heading", { level: 1, name: "مسجد النور" })).toBeVisible();
+  await expect(laptop.getByRole("navigation", { name: "مسجد النور" })).toBeVisible();
 
   // Afterwards the home page goes straight to the organization, with no loop.
   await laptop.goto("/ar/dashboard");
-  await expect(laptop.getByRole("heading", { level: 1, name: "مسجد النور" })).toBeVisible();
+  await expect(laptop.getByRole("navigation", { name: "مسجد النور" })).toBeVisible();
+  // Teachers have no Teachers tab; their Classes tab is empty until assigned.
+  await expect(laptop.getByRole("link", { name: "المعلمون" })).toHaveCount(0);
+  await laptop.getByRole("link", { name: "الحلقات" }).click();
   await expect(laptop.getByText("لا توجد حلقات بعد.")).toBeVisible();
 
   // The admin now sees the teacher, unassigned, and assigns them to a class.
-  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001");
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/teachers");
   const teacherRow = page.getByRole("listitem").filter({ hasText: teacherName }).first();
   await expect(teacherRow.getByText("غير مُسند إلى حلقة")).toBeVisible();
   await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000001");

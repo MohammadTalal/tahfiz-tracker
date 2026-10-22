@@ -14,6 +14,15 @@ export const nameSchema = z.object({
   name: z.string().trim().min(1, { error: "required" }).max(100, { error: "tooLong" }),
 });
 
+export const accountSchema = z.object({
+  displayName: z.string().trim().min(1, { error: "required" }).max(100, { error: "tooLong" }),
+  // Optional; same rule as the database check.
+  phone: z
+    .string()
+    .trim()
+    .regex(/^(\+?[0-9 ()-]{6,24})?$/, { error: "invalid_phone" }),
+});
+
 export const RATINGS = ["excellent", "very_good", "good", "needs_improvement", "not_completed"] as const;
 export const MISTAKES = ["forgotten_words", "sequence", "pronunciation", "tajweed", "hesitation"] as const;
 
