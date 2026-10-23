@@ -520,6 +520,11 @@ isOneToOne: false
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
                            },
+"student_juz_progress":
+{ Args: { "p_student_ids": (string)[] }; Returns: {
+              "juz": number,"percent": number,"student_id": string
+            }[]
+                           },
 "student_progress":
 { Args: { "p_student_ids": (string)[] }; Returns: {
               "last_lesson_date": string,"last_rating": Database["public"]['Enums']["performance_rating"],"mem_end_ayah": number,"mem_end_surah": number,"mem_start_ayah": number,"mem_start_surah": number,"student_id": string

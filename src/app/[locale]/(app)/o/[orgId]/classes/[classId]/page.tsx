@@ -68,7 +68,13 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
                 description={canAdd ? t("noStudentsHint") : t("noStudentsTeacherHint")}
               />
             ) : (
-              <ClassProgress orgId={orgId} classId={classId} students={progress} canManage={canAdd} />
+              <ClassProgress
+                orgId={orgId}
+                classId={classId}
+                students={progress}
+                canManage={canAdd}
+                canRecord={org.isAdmin || cls.taughtByMe}
+              />
             )}
           </Section>
         </div>

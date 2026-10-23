@@ -5,12 +5,17 @@ import { authEmailLink, PASSWORD, signUpAndGetConfirmLink } from "./helpers";
 // Arabic UI, as most teachers will use it.
 test.use({ locale: "ar-SA" });
 
+// A student's row link starts with their name; the row's "record a lesson for …"
+// button also contains it, so match from the start.
+const startsWith = (text: string) => new RegExp(`^${text}`);
+
 test("teacher records a lesson and a parent follows progress", async ({ page, browser }, testInfo) => {
   test.slow();
   const run = `${testInfo.project.name}-${Date.now()}`;
   const teacherEmail = `teacher-${run}@e2e.local`;
   const parentEmail = `parent-${run}@e2e.local`;
   let studentUrl = "";
+  let classUrl = "";
   let inviteUrl = "";
 
   await test.step("teacher signs up and creates a circle", async () => {
@@ -38,9 +43,11 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
       .getByRole("link", { name: /حلقة الفجر/ })
       .first()
       .click();
+    await expect(page.getByRole("heading", { level: 1, name: "حلقة الفجر" })).toBeVisible();
+    classUrl = page.url();
     await page.getByLabel("اسم الطالب").fill("عمر");
     await page.getByRole("button", { name: "إضافة", exact: true }).click();
-    await page.getByRole("link", { name: "عمر" }).click();
+    await page.getByRole("link", { name: startsWith("عمر") }).click();
     await expect(page.getByRole("heading", { level: 1, name: "عمر" })).toBeVisible();
     studentUrl = page.url();
   });
@@ -53,9 +60,9 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
 
     await page.getByLabel("السورة", { exact: true }).selectOption("67"); // by value
     // Picking a surah fills the whole surah: ayah 1 to its last ayah.
-    await expect(page.getByLabel("من الآية")).toHaveValue("1");
-    await expect(page.getByLabel("إلى الآية")).toHaveValue("30");
-    await page.getByLabel("إلى الآية").fill("5");
+    await expect(page.getByLabel("من الآية", { exact: true })).toHaveValue("1");
+    await expect(page.getByLabel("إلى الآية", { exact: true })).toHaveValue("30");
+    await page.getByLabel("إلى الآية", { exact: true }).fill("5");
     await page.getByRole("group").getByText("جيد", { exact: true }).click();
     // Next memorization is suggested automatically from the passage.
     await expect(page.getByRole("checkbox", { name: /الحفظ القادم: الملك ٦–١٠/ })).toBeChecked();
@@ -75,8 +82,8 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
   await test.step("records the next lesson while offline, then it saves when back online", async () => {
     await page.getByRole("link", { name: "تسجيل درس" }).click();
     await expect(page.getByText("مأخوذ من المهمة الحالية.")).toBeVisible();
-    await expect(page.getByLabel("من الآية")).toHaveValue("6");
-    await expect(page.getByLabel("إلى الآية")).toHaveValue("10");
+    await expect(page.getByLabel("من الآية", { exact: true })).toHaveValue("6");
+    await expect(page.getByLabel("إلى الآية", { exact: true })).toHaveValue("10");
     await page.getByRole("group").getByText("ممتاز", { exact: true }).click();
 
     await page.context().setOffline(true);
@@ -94,11 +101,31 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
   await test.step("an ayah past the end of the surah is caught", async () => {
     await page.getByRole("link", { name: "تسجيل درس" }).click();
     await page.getByLabel("السورة", { exact: true }).selectOption("1"); // Al-Fatiha: 7 ayahs
-    await page.getByLabel("إلى الآية").fill("9");
+    await page.getByLabel("إلى الآية", { exact: true }).fill("9");
     await page.getByRole("group").getByText("جيد", { exact: true }).click();
     await page.getByRole("button", { name: "حفظ الدرس" }).click();
     await expect(page.getByText("عدد آيات السورة أقل من ذلك")).toBeVisible();
     await page.getByRole("link", { name: "رجوع" }).click();
+  });
+
+  await test.step("records straight from the class page, then saves and moves to the next student", async () => {
+    await page.goto(classUrl);
+    // Progress through the current juz shows on each row (عمر: Al-Mulk, juz 29).
+    await expect(page.getByRole("link", { name: startsWith("عمر") }).getByText("الجزء ٢٩")).toBeVisible();
+    await page.getByLabel("اسم الطالب").fill("زيد"); // sorts before عمر
+    await page.getByLabel("اسم الطالب").press("Enter");
+    await page.getByRole("link", { name: "تسجيل درس لـ زيد" }).click();
+    await expect(page.getByText("حلقة الفجر — ١ من ٢")).toBeVisible();
+    await page.getByLabel("السورة", { exact: true }).selectOption("114"); // An-Nas: 1 to 6
+    await page.getByRole("button", { name: "إنقاص إلى الآية" }).click();
+    await expect(page.getByLabel("إلى الآية", { exact: true })).toHaveValue("5");
+    await page.getByRole("group").getByText("جيد", { exact: true }).click();
+    await page.getByRole("button", { name: /حفظ والتالي: عمر/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "عمر" })).toBeVisible();
+    await expect(page.getByText("حلقة الفجر — ٢ من ٢")).toBeVisible();
+    // The last student in the class has no "next".
+    await expect(page.getByRole("button", { name: /حفظ والتالي/ })).toHaveCount(0);
+    await page.goto(studentUrl);
   });
 
   await test.step("marks an assignment as done", async () => {
@@ -200,7 +227,7 @@ test("a teacher sees their class but cannot change who is in it, or export", asy
   await page.getByRole("button", { name: "دخول" }).click();
   await expect(page).toHaveURL(/\/ar\/o\//);
   await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000002");
-  await expect(page.getByRole("link", { name: /يوسف/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: startsWith("يوسف") })).toBeVisible();
   await expect(page.getByRole("heading", { name: "إضافة طالب" })).toHaveCount(0);
   await expect(page.getByLabel("اسم الطالب")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^إخراج / })).toHaveCount(0);
@@ -219,24 +246,24 @@ test("an admin adds, unlinks and re-adds students in a class", async ({ page }) 
   const name = `طالب ${Date.now()}`;
   await page.getByLabel("اسم الطالب").fill(name);
   await page.getByLabel("اسم الطالب").press("Enter");
-  await expect(page.getByRole("link", { name })).toBeVisible();
+  await expect(page.getByRole("link", { name: startsWith(name) })).toBeVisible();
 
   // Unlink the student, then add them back from the "without a class" list.
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: `إخراج ${name} من هذه الحلقة` }).click();
-  await expect(page.getByRole("link", { name })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(0);
   await page.getByLabel("طالب بدون حلقة").selectOption({ label: name });
   await page.getByLabel("طالب بدون حلقة").locator("xpath=ancestor::form").getByRole("button").click();
-  await expect(page.getByRole("link", { name })).toBeVisible();
+  await expect(page.getByRole("link", { name: startsWith(name) })).toBeVisible();
   await expect(page.getByLabel("طالب بدون حلقة").getByRole("option", { name })).toHaveCount(0);
 
   // Adding the same name again warns first; a second press adds the new student.
   await page.getByLabel("اسم الطالب").fill(name);
   await page.getByLabel("اسم الطالب").press("Enter");
   await expect(page.getByText("يوجد طالب بهذا الاسم")).toBeVisible();
-  await expect(page.getByRole("link", { name })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(1);
   await page.getByLabel("اسم الطالب").press("Enter");
-  await expect(page.getByRole("link", { name })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(2);
 });
 
 test("an admin moves between the dashboard, classes, teachers and students", async ({ page }) => {
@@ -312,7 +339,7 @@ test("an admin adds a student from the Students tab", async ({ page }) => {
   await page.getByLabel("اسم الطالب").fill(name);
   await page.getByLabel("الحلقة", { exact: true }).selectOption({ label: "حلقة ب" });
   await page.getByRole("button", { name: "إضافة", exact: true }).click();
-  const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name }) });
+  const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: startsWith(name) }) });
   await expect(row.getByRole("link", { name: "حلقة ب" })).toBeVisible();
 
   // The same name again asks first; a second press adds it.
@@ -321,7 +348,7 @@ test("an admin adds a student from the Students tab", async ({ page }) => {
   await page.getByRole("button", { name: "إضافة", exact: true }).click();
   await expect(page.getByText("يوجد طالب بهذا الاسم")).toBeVisible();
   await page.getByRole("button", { name: "إضافة", exact: true }).click();
-  await expect(page.getByRole("link", { name })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(2);
 });
 
 test("an admin archives a student without a class", async ({ page }) => {
@@ -336,13 +363,13 @@ test("an admin archives a student without a class", async ({ page }) => {
   await page.getByLabel("اسم الطالب").press("Enter");
   page.on("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: `إخراج ${name} من هذه الحلقة` }).click();
-  await expect(page.getByRole("link", { name })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(0);
 
   await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/students");
   await page.getByLabel("تصفية حسب الحلقة").selectOption({ label: "بدون حلقة" });
-  await expect(page.getByRole("link", { name })).toBeVisible();
+  await expect(page.getByRole("link", { name: startsWith(name) })).toBeVisible();
   await page.getByRole("button", { name: `أرشفة ${name}` }).click();
-  await expect(page.getByRole("link", { name })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(0);
 });
 
 test("an invited teacher joins the organization even when the email is confirmed on another device", async ({
@@ -408,7 +435,7 @@ test("an invited teacher joins the organization even when the email is confirmed
   // The teacher now sees that class and its students.
   await laptop.reload();
   await laptop.getByRole("link", { name: /حلقة أ/ }).click();
-  await expect(laptop.getByRole("link", { name: /أحمد/ })).toBeVisible();
+  await expect(laptop.getByRole("link", { name: startsWith("أحمد") })).toBeVisible();
 
   // The overview shows the teacher with the class.
   await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/overview");

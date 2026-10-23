@@ -7,6 +7,7 @@ import { StatStrip } from "@/components/layout/stat-strip";
 import {
   AssignmentList,
   DateLabel,
+  JuzProgress,
   LessonList,
   PassageLabel,
   Section,
@@ -14,6 +15,7 @@ import {
 import {
   getLessonCount,
   getLessons,
+  getJuzProgress,
   getOpenAssignments,
   getStudent,
   getWorkspace,
@@ -31,10 +33,11 @@ export default async function ChildPage({ params }: PageProps<"/[locale]/childre
   const [workspace, student] = await Promise.all([getWorkspace(user.id), getStudent(studentId)]);
   if (!student || !workspace.children.some((c) => c.id === studentId)) notFound();
 
-  const [lessons, lessonCount, assignments] = await Promise.all([
+  const [lessons, lessonCount, assignments, juz] = await Promise.all([
     getLessons(studentId, { withPrivateNotes: false }),
     getLessonCount(studentId),
     getOpenAssignments(studentId),
+    getJuzProgress(studentId),
   ]);
   const t = await getTranslations("Parent");
   const ts = await getTranslations("Student");
@@ -66,6 +69,12 @@ export default async function ChildPage({ params }: PageProps<"/[locale]/childre
             </div>
           </div>
         </section>
+      )}
+
+      {juz && (
+        <div className="bg-card rounded-xl border p-4 shadow-(--shadow-soft)">
+          <JuzProgress juz={juz} size="lg" />
+        </div>
       )}
 
       <StatStrip

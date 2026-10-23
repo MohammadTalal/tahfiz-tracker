@@ -170,7 +170,8 @@
     "notLinked": "No parent",
     "noLessonsYet": "No lessons yet",
     "none": "—",
-    "noStudentsTeacherHint": "An admin of your organization will add students to this class."
+    "noStudentsTeacherHint": "An admin of your organization will add students to this class.",
+    "recordFor": "Record a lesson for {name}"
   },
   "Student": {
     "archive": "Archive {name}",
@@ -231,7 +232,11 @@
     "back": "Back",
     "extras": "Extras",
     "extrasHint": "Notes, mistakes, revision, date",
-    "ayahCount": "Ayahs in this surah: {count}"
+    "ayahCount": "Ayahs in this surah: {count}",
+    "ayahLess": "Decrease {field}",
+    "ayahMore": "Increase {field}",
+    "saveAndNext": "Save & next: {name}",
+    "positionInClass": "{className} · {n} of {total}"
   },
   "Rating": {
     "excellent": "Excellent",
@@ -347,7 +352,8 @@
     "close": "Close",
     "class": "Class",
     "chooseClass": "Choose a class",
-    "createClassFirst": "Create a class first in the Classes tab, then add students to it."
+    "createClassFirst": "Create a class first in the Classes tab, then add students to it.",
+    "recordFor": "Record a lesson for {name}"
   },
   "Contact": {
     "call": "Call {name}",
@@ -396,5 +402,8 @@
     "myClassesTitle": "My classes",
     "pagesCount": "{count, plural, one {# page} other {# pages}}",
     "monthTotal": "Memorized this month: {count, plural, one {# page} other {# pages}}"
+  },
+  "Juz": {
+    "label": "Juz {juz}"
   }
 }

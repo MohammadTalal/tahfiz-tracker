@@ -33,7 +33,7 @@ export function ActivityChart({ days }: { days: { date: string; count: number }[
             {/* Tooltip */}
             <div className="bg-foreground text-background pointer-events-none absolute start-1/2 bottom-full z-10 mb-1 hidden -translate-x-1/2 rounded-md px-2 py-1 text-xs whitespace-nowrap shadow-md group-hover:block rtl:translate-x-1/2">
               <span className="font-semibold">{t("lessonsCount", { count: d.count })}</span>
-              <span className="opacity-80"> · {fullDate.format(asDate(d.date))}</span>
+              <span className="opacity-80"> — {fullDate.format(asDate(d.date))}</span>
             </div>
             <div
               className={cn(

@@ -240,3 +240,42 @@ export function Panel({
     </section>
   );
 }
+
+/** "Juz 30 · 45%" with a thin bar: progress through the juz being memorized now. */
+export function JuzProgress({
+  juz,
+  size = "sm",
+  className,
+}: {
+  juz: { number: number; percent: number };
+  size?: "sm" | "lg";
+  className?: string;
+}) {
+  const t = useTranslations("Juz");
+  const locale = useLocale();
+  const numbering = locale === "ar" ? "ar-u-nu-arab" : "en";
+  const number = new Intl.NumberFormat(numbering).format(juz.number);
+  const percent = new Intl.NumberFormat(numbering, { style: "percent" }).format(juz.percent / 100);
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
+      <div className={cn("flex items-baseline justify-between gap-2", size === "lg" ? "text-sm" : "text-xs")}>
+        <span className={size === "lg" ? "font-medium" : "text-muted-foreground"}>
+          {t("label", { juz: number })}
+        </span>
+        <span className={cn("font-semibold tabular-nums", size === "lg" && "text-primary text-lg")}>
+          {percent}
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={juz.percent}
+        aria-label={t("label", { juz: number })}
+        className={cn("bg-muted overflow-hidden rounded-full", size === "lg" ? "h-2.5" : "h-1.5")}
+      >
+        <div className="bg-primary h-full rounded-full" style={{ width: `${juz.percent}%` }} />
+      </div>
+    </div>
+  );
+}

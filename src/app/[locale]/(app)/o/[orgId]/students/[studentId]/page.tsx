@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import {
   AssignmentList,
   DateLabel,
+  JuzProgress,
   LessonList,
   Panel,
   PassageLabel,
@@ -17,6 +18,7 @@ import {
 import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
 import { InvitePanel } from "@/features/workspace/components/invite-panel";
 import {
+  getJuzProgress,
   getLessonCount,
   getLessons,
   getOpenAssignments,
@@ -38,11 +40,12 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
   const [org, student] = await Promise.all([getOrganizationForStaff(orgId, user.id), getStudent(studentId)]);
   if (!org || !student || student.organization_id !== orgId) notFound();
 
-  const [lessons, lessonCount, assignments, parents] = await Promise.all([
+  const [lessons, lessonCount, assignments, parents, juz] = await Promise.all([
     getLessons(studentId, { withPrivateNotes: true }),
     getLessonCount(studentId),
     getOpenAssignments(studentId),
     getParents(studentId),
+    getJuzProgress(studentId),
   ]);
   const t = await getTranslations("Student");
   const tn = await getTranslations("OrgNav");
@@ -79,6 +82,12 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
           </>
         }
       />
+
+      {juz && (
+        <div className="bg-card rounded-xl border p-4 shadow-(--shadow-soft)">
+          <JuzProgress juz={juz} size="lg" />
+        </div>
+      )}
 
       <StatStrip
         stats={[

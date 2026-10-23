@@ -1,7 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useId } from "react";
+import { Minus, Plus } from "lucide-react";
+import { type ReactNode, useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -80,6 +81,8 @@ export function SurahAyahFields({
           id={`${id}-from`}
           label={t("fromAyah")}
           value={value.startAyah}
+          min={1}
+          max={value.endAyah ?? count}
           invalid={!!errors.startAyah}
           onChange={(startAyah) => onChange({ ...value, startAyah, endSurah: value.startSurah })}
         />
@@ -88,6 +91,8 @@ export function SurahAyahFields({
           label={t("toAyah")}
           placeholder={count !== undefined ? String(count) : undefined}
           value={value.endAyah}
+          min={value.startAyah ?? 1}
+          max={count}
           invalid={!!errors.endAyah}
           onChange={(endAyah) => onChange({ ...value, endAyah, endSurah: value.startSurah })}
         />
@@ -111,6 +116,8 @@ function AyahInput({
   value,
   invalid,
   placeholder,
+  min,
+  max,
   onChange,
 }: {
   id: string;
@@ -118,26 +125,76 @@ function AyahInput({
   value?: number;
   invalid: boolean;
   placeholder?: string;
+  min: number;
+  max?: number;
   onChange: (value: number | undefined) => void;
 }) {
+  const t = useTranslations("Lesson");
+  // One tap moves the ayah by one, within the surah and the range.
+  const step = (delta: number) => {
+    const base = value ?? (delta > 0 ? min - 1 : (max ?? min) + 1);
+    const nextValue = Math.max(min, Math.min(max ?? Infinity, base + delta));
+    onChange(nextValue);
+  };
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        enterKeyHint="next"
-        dir="ltr"
-        autoComplete="off"
-        placeholder={placeholder}
-        value={value ?? ""}
-        onChange={(e) => onChange(toAyah(e.target.value))}
-        onFocus={(e) => e.target.select()}
-        aria-invalid={invalid ? true : undefined}
-        className="h-12 text-center text-lg font-semibold"
-      />
+      <div className="flex items-center gap-1" dir="ltr">
+        <StepButton
+          label={t("ayahLess", { field: label })}
+          disabled={value !== undefined && value <= min}
+          onClick={() => step(-1)}
+        >
+          <Minus className="size-4" aria-hidden />
+        </StepButton>
+        <Input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          enterKeyHint="next"
+          dir="ltr"
+          autoComplete="off"
+          placeholder={placeholder}
+          value={value ?? ""}
+          onChange={(e) => onChange(toAyah(e.target.value))}
+          onFocus={(e) => e.target.select()}
+          aria-invalid={invalid ? true : undefined}
+          className="h-12 min-w-0 flex-1 px-1 text-center text-lg font-semibold"
+        />
+        <StepButton
+          label={t("ayahMore", { field: label })}
+          disabled={value !== undefined && max !== undefined && value >= max}
+          onClick={() => step(1)}
+        >
+          <Plus className="size-4" aria-hidden />
+        </StepButton>
+      </div>
     </div>
+  );
+}
+
+function StepButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="bg-surface-tint hover:bg-accent text-primary grid size-10 shrink-0 place-items-center rounded-lg border transition-colors duration-150 disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }

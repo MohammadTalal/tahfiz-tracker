@@ -1,28 +1,31 @@
 import { cn } from "cn";
-import { ChevronLeft, Users } from "lucide-react";
+import { ChevronLeft, PenLine, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { InitialAvatar } from "@/components/layout/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import type { StudentProgress } from "../queries";
 import { UnenrollStudentButton } from "./class-students";
-import { DateLabel, PassageLabel, RatingBadge } from "./display";
+import { DateLabel, JuzProgress, PassageLabel, RatingBadge } from "./display";
 
 /**
  * A class at a glance: each student's current memorization, last lesson and
- * linked parents. A table on wide screens, stacked rows on phones. With
- * `canManage`, each row gets a button to unlink the student from the class.
+ * linked parents, with progress through their current juz. A table on wide
+ * screens, stacked rows on phones. `canRecord` adds a one-tap "record
+ * lesson" button per row; `canManage` a button to unlink the student.
  */
 export function ClassProgress({
   orgId,
   classId,
   students,
   canManage,
+  canRecord,
 }: {
   orgId: string;
   classId: string;
   students: StudentProgress[];
   canManage: boolean;
+  canRecord: boolean;
 }) {
   const t = useTranslations("Class");
   // The "memorizing now" column only appears when some student has one.
@@ -36,7 +39,7 @@ export function ClassProgress({
         className={cn(
           "text-muted-foreground bg-surface-tint hidden gap-4 border-b px-4 py-2.5 text-xs font-medium md:grid",
           columns,
-          canManage && "pe-14",
+          canRecord ? (canManage ? "pe-26" : "pe-16") : canManage && "pe-14",
         )}
       >
         <span>{t("student")}</span>
@@ -57,7 +60,10 @@ export function ClassProgress({
             >
               <span className="flex min-w-0 items-center gap-3">
                 <InitialAvatar name={s.name} size="sm" />
-                <span className="truncate font-medium">{s.name}</span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="truncate font-medium">{s.name}</span>
+                  {s.juz && <JuzProgress juz={s.juz} className="max-w-48" />}
+                </span>
               </span>
 
               {s.memorizing ? (
@@ -107,9 +113,19 @@ export function ClassProgress({
                 aria-hidden
               />
             </Link>
-            {canManage && (
-              <span className="me-2 shrink-0">
-                <UnenrollStudentButton classId={classId} student={s} />
+            {(canRecord || canManage) && (
+              <span className="me-2 flex shrink-0 items-center gap-1">
+                {canRecord && (
+                  <Link
+                    href={`/o/${orgId}/students/${s.id}/record`}
+                    aria-label={t("recordFor", { name: s.name })}
+                    title={t("recordFor", { name: s.name })}
+                    className="bg-primary text-primary-foreground hover:bg-primary-strong grid size-10 place-items-center rounded-full transition-colors duration-150"
+                  >
+                    <PenLine className="size-4" aria-hidden />
+                  </Link>
+                )}
+                {canManage && <UnenrollStudentButton classId={classId} student={s} />}
               </span>
             )}
           </li>

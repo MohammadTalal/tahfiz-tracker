@@ -7,7 +7,9 @@ import {
   getLessons,
   getOpenAssignments,
   getOrganizationForStaff,
+  getClassWithRoster,
   getStudent,
+  getStudentClassId,
 } from "@/features/workspace/queries";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -28,9 +30,10 @@ export default async function RecordLessonPage({
   if (!org || !student || student.organization_id !== orgId || student.status !== "active") notFound();
 
   // Pre-fill: the current memorization assignment, else the passage after the last lesson.
-  const [assignments, lessons] = await Promise.all([
+  const [assignments, lessons, classId] = await Promise.all([
     getOpenAssignments(studentId),
     getLessons(studentId, { withPrivateNotes: false }),
+    getStudentClassId(studentId),
   ]);
   const assignment = assignments.find((a) => a.assignment_type === "memorization");
   const lastLesson = lessons[0];
@@ -40,6 +43,17 @@ export default async function RecordLessonPage({
 
   const t = await getTranslations("Lesson");
   const studentHref = `/o/${orgId}/students/${studentId}`;
+
+  // "Save & next": the next student (by name) in the same class, so a teacher
+  // can go through the whole class without leaving this screen.
+  const cls = classId ? await getClassWithRoster(orgId, classId, user.id) : null;
+  const roster = cls?.students ?? [];
+  const position = roster.findIndex((s) => s.id === studentId);
+  const nextStudent = position >= 0 ? roster[position + 1] : undefined;
+  const next = nextStudent
+    ? { href: `/o/${orgId}/students/${nextStudent.id}/record`, name: nextStudent.display_name }
+    : null;
+  const fmt = (n: number) => n.toLocaleString(locale === "ar" ? "ar-u-nu-arab" : "en");
 
   return (
     // Compact so the whole form fits one phone screen; moderate width on desktop.
@@ -55,7 +69,11 @@ export default async function RecordLessonPage({
         </Link>
         <InitialAvatar name={student.display_name} size="sm" />
         <div className="min-w-0">
-          <p className="text-muted-foreground text-xs">{t("heading")}</p>
+          <p className="text-muted-foreground truncate text-xs">
+            {cls && position >= 0
+              ? t("positionInClass", { className: cls.name, n: fmt(position + 1), total: fmt(roster.length) })
+              : t("heading")}
+          </p>
           <h1 dir="auto" className="truncate text-lg leading-tight font-bold">
             {student.display_name}
           </h1>
@@ -63,12 +81,13 @@ export default async function RecordLessonPage({
       </div>
       {/* A new key after each saved lesson guarantees a fresh form (and idempotency key). */}
       <RecordLessonForm
-        key={lastLesson?.id ?? "first"}
+        key={`${studentId}:${lastLesson?.id ?? "first"}`}
         studentId={studentId}
         studentHref={studentHref}
         defaultPassage={defaultPassage}
         defaultSource={defaultSource}
         assignmentId={assignment?.id ?? null}
+        next={next}
       />
     </div>
   );

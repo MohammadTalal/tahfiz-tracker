@@ -291,12 +291,15 @@ export type StudentProgress = {
     performance_rating: Database["public"]["Enums"]["performance_rating"];
   } | null;
   parents: { name: string; status: Database["public"]["Enums"]["relationship_status"] }[];
+  /** The juz being memorized now and how much of it is done (0–100). */
+  juz: { number: number; percent: number } | null;
 };
 
 /**
- * Progress for a set of students: last lesson and current memorization (one
- * database call that returns one row per student, so long histories are not
- * loaded), plus linked parents unless `withParents` is false.
+ * Progress for a set of students: last lesson, current memorization and
+ * current juz progress (database calls that return one row per student, so
+ * long histories are not loaded), plus linked parents unless `withParents`
+ * is false.
  */
 export async function getStudentsProgress(
   students: { id: string; display_name: string }[],
@@ -305,8 +308,9 @@ export async function getStudentsProgress(
   if (students.length === 0) return [];
   const ids = students.map((s) => s.id);
   const supabase = await createClient();
-  const [progress, parents] = await Promise.all([
+  const [progress, juz, parents] = await Promise.all([
     supabase.rpc("student_progress", { p_student_ids: ids }),
+    supabase.rpc("student_juz_progress", { p_student_ids: ids }),
     withParents
       ? supabase
           .from("parent_student_relationships")
@@ -316,9 +320,11 @@ export async function getStudentsProgress(
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (progress.error) throw progress.error;
+  if (juz.error) throw juz.error;
   if (parents.error) throw parents.error;
 
   const byId = new Map(progress.data.map((p) => [p.student_id, p]));
+  const juzById = new Map(juz.data.map((j) => [j.student_id, { number: j.juz, percent: j.percent }]));
   return students.map((s) => {
     const p = byId.get(s.id);
     return {
@@ -343,6 +349,7 @@ export async function getStudentsProgress(
       parents: parents.data
         .filter((r) => r.student_id === s.id)
         .map((r) => ({ name: r.profiles?.display_name ?? "", status: r.status })),
+      juz: juzById.get(s.id) ?? null,
     };
   });
 }
@@ -453,4 +460,27 @@ export async function getOwnPhone(userId: string) {
     .maybeSingle();
   if (error) throw error;
   return data?.phone ?? "";
+}
+
+/** Progress through the juz one student is memorizing now, or null. */
+export async function getJuzProgress(studentId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("student_juz_progress", { p_student_ids: [studentId] });
+  if (error) throw error;
+  const row = data[0];
+  return row ? { number: row.juz, percent: row.percent } : null;
+}
+
+/** A class the student is in now (the first by name), or null. */
+export async function getStudentClassId(studentId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("class_enrollments")
+    .select("class_id, classes(name)")
+    .eq("student_id", studentId)
+    .eq("status", "active");
+  if (error) throw error;
+  return (
+    data.sort((a, b) => (a.classes?.name ?? "").localeCompare(b.classes?.name ?? ""))[0]?.class_id ?? null
+  );
 }

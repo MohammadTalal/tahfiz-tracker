@@ -175,7 +175,7 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
           <p className="text-primary-foreground/80 text-sm">{t("greeting")}</p>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{name || org.name}</h1>
           <p className="text-primary-foreground/85 mt-2 text-sm">
-            {gregorian} · <span className="font-medium">{hijri}</span>
+            {gregorian} — <span className="font-medium">{hijri}</span>
           </p>
           <p className="text-primary-foreground/85 mt-3 max-w-xl text-sm">
             {weekLessons.length === 0
@@ -281,7 +281,7 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                     </span>
                     <RatingBadge rating={l.performance_rating} />
                     <span className="text-subtle-foreground ms-auto text-xs">
-                      {l.teacherName && `${l.teacherName} · `}
+                      {l.teacherName && `${l.teacherName} — `}
                       <DateLabel date={l.lesson_date} />
                     </span>
                   </li>

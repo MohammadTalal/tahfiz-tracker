@@ -1,4 +1,4 @@
-import { Download, GraduationCap, UserCheck, Users } from "lucide-react";
+import { Download, GraduationCap, PenLine, UserCheck, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { InitialAvatar } from "@/components/layout/avatar";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { AddStudentPanel } from "@/features/workspace/components/add-student-panel";
 import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
-import { DateLabel, PassageLabel, RatingBadge } from "@/features/workspace/components/display";
+import { DateLabel, JuzProgress, PassageLabel, RatingBadge } from "@/features/workspace/components/display";
 import { PhoneLink } from "@/features/workspace/components/phone-link";
 import { type DirectoryRow, StudentDirectory } from "@/features/workspace/components/student-directory";
 import {
@@ -104,7 +104,7 @@ async function StudentRow({
     <div className="grid gap-3 p-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.3fr)] md:items-start md:gap-6">
       <div className="flex min-w-0 items-start gap-3">
         <InitialAvatar name={s.name} />
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <Link
             href={`/o/${orgId}/students/${s.id}`}
             className="hover:text-primary truncate font-semibold transition-colors duration-150"
@@ -124,7 +124,19 @@ async function StudentRow({
           ) : (
             <span className="text-subtle-foreground text-xs">{t("noLessons")}</span>
           )}
+          {s.juz && <JuzProgress juz={s.juz} className="mt-1 max-w-56" />}
         </div>
+        {/* One tap to record; students without a class only get lessons once placed. */}
+        {s.classes.length > 0 && (
+          <Link
+            href={`/o/${orgId}/students/${s.id}/record`}
+            aria-label={t("recordFor", { name: s.name })}
+            title={t("recordFor", { name: s.name })}
+            className="bg-primary text-primary-foreground hover:bg-primary-strong grid size-10 shrink-0 place-items-center rounded-full transition-colors duration-150"
+          >
+            <PenLine className="size-4" aria-hidden />
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5 text-sm">

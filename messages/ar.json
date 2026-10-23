@@ -124,7 +124,7 @@
     "data": "البيانات",
     "exportLessons": "تنزيل كل الدروس (CSV)",
     "exportHelp": "جدول بكل دروس هذه الجهة، بما فيها ملاحظات المعلمين. احفظه في مكان خاص.",
-    "summary": "{classes, plural, =0 {لا حلقات} one {حلقة واحدة} two {حلقتان} few {# حلقات} many {# حلقة} other {# حلقة}} · {students, plural, =0 {لا طلاب} one {طالب واحد} two {طالبان} few {# طلاب} many {# طالبًا} other {# طالب}}",
+    "summary": "{classes, plural, =0 {لا حلقات} one {حلقة واحدة} two {حلقتان} few {# حلقات} many {# حلقة} other {# حلقة}} — {students, plural, =0 {لا طلاب} one {طالب واحد} two {طالبان} few {# طلاب} many {# طالبًا} other {# طالب}}",
     "noClassesHint": "أنشئ حلقتك الأولى من الأسفل، ثم أضف إليها الطلاب.",
     "noClassesTeacherHint": "سيضيفك المشرف إلى حلقة.",
     "youTeach": "تدرّسها",
@@ -170,7 +170,8 @@
     "notLinked": "لا ولي أمر",
     "noLessonsYet": "لا دروس بعد",
     "none": "—",
-    "noStudentsTeacherHint": "سيضيف مشرف الجهة الطلاب إلى هذه الحلقة."
+    "noStudentsTeacherHint": "سيضيف مشرف الجهة الطلاب إلى هذه الحلقة.",
+    "recordFor": "تسجيل درس لـ {name}"
   },
   "Student": {
     "archive": "أرشفة {name}",
@@ -231,7 +232,11 @@
     "back": "رجوع",
     "extras": "إضافات",
     "extrasHint": "ملاحظات، أخطاء، مراجعة، التاريخ",
-    "ayahCount": "عدد آيات السورة: {count}"
+    "ayahCount": "عدد آيات السورة: {count}",
+    "ayahLess": "إنقاص {field}",
+    "ayahMore": "زيادة {field}",
+    "saveAndNext": "حفظ والتالي: {name}",
+    "positionInClass": "{className} — {n} من {total}"
   },
   "Rating": {
     "excellent": "ممتاز",
@@ -347,7 +352,8 @@
     "close": "إغلاق",
     "class": "الحلقة",
     "chooseClass": "اختر حلقة",
-    "createClassFirst": "أنشئ حلقة أولًا من تبويب الحلقات، ثم أضف الطلاب إليها."
+    "createClassFirst": "أنشئ حلقة أولًا من تبويب الحلقات، ثم أضف الطلاب إليها.",
+    "recordFor": "تسجيل درس لـ {name}"
   },
   "Contact": {
     "call": "اتصال بـ {name}",
@@ -396,5 +402,8 @@
     "myClassesTitle": "حلقاتي",
     "pagesCount": "{count, plural, one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}",
     "monthTotal": "مجموع الحفظ هذا الشهر: {count, plural, one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}"
+  },
+  "Juz": {
+    "label": "الجزء {juz}"
   }
 }

@@ -4,6 +4,7 @@ import {
   BookMarked,
   Check,
   ChevronDown,
+  ChevronLeft,
   CircleAlert,
   History,
   Loader2,
@@ -111,6 +112,8 @@ type Props = {
   defaultSource: "assignment" | "suggestion" | null;
   /** Open memorization assignment the lesson is for; closed when the lesson is saved. */
   assignmentId: string | null;
+  /** The next student in the class, for "Save & next". */
+  next: { href: string; name: string } | null;
 };
 
 const noopSubscribe = () => () => {};
@@ -152,7 +155,7 @@ function loadOrStart(
   };
 }
 
-function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, assignmentId }: Props) {
+function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, assignmentId, next }: Props) {
   const t = useTranslations("Lesson");
   const tr = useTranslations("Rating");
   const tm = useTranslations("Mistake");
@@ -168,6 +171,13 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
   const [formError, setFormError] = useState<string | null>(null);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const saving = useRef(false);
+  // Which save button was pressed; kept for the automatic retry when back online.
+  const goNext = useRef(false);
+  const [pressedNext, setPressedNext] = useState(false);
+  const press = (toNext: boolean) => {
+    goNext.current = toNext;
+    setPressedNext(toNext);
+  };
   // Set after a successful save so the reset form is not stored as a new draft.
   const skipNextPersist = useRef(false);
 
@@ -231,7 +241,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
         setRestored(false);
         setStatus("idle");
         toast.success(t("saved"));
-        router.push(studentHref);
+        router.push(goNext.current && next ? next.href : studentHref);
         return;
       }
       setErrors(result.fieldErrors ?? {});
@@ -246,7 +256,7 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
     } finally {
       saving.current = false;
     }
-  }, [assignmentId, defaultPassage, draftKey, router, state, studentHref, studentId, t]);
+  }, [assignmentId, defaultPassage, draftKey, next, router, state, studentHref, studentId, t]);
 
   useEffect(() => {
     if (status !== "offline") return;
@@ -497,20 +507,35 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
       )}
 
       <div className="bg-background/95 sticky bottom-0 z-10 -mx-4 border-t px-4 py-3 sm:-mx-6 sm:px-6">
-        <div className="flex justify-end">
+        <div className="flex gap-2 sm:justify-end">
           <Button
             type="submit"
             size="lg"
-            className="h-12 w-full text-base sm:w-64"
+            variant={next ? "outline" : "default"}
+            className={cn("h-12 text-base", next ? "shrink-0 px-5" : "w-full sm:w-64")}
             disabled={status === "saving"}
+            onClick={() => press(false)}
           >
-            {status === "saving" ? (
+            {status === "saving" && !pressedNext ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
               <Save className="size-4" aria-hidden />
             )}
             {t("save")}
           </Button>
+          {next && (
+            <Button
+              type="submit"
+              size="lg"
+              className="h-12 min-w-0 flex-1 text-base sm:w-64 sm:flex-none"
+              disabled={status === "saving"}
+              onClick={() => press(true)}
+            >
+              {status === "saving" && pressedNext && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              <span className="truncate">{t("saveAndNext", { name: next.name })}</span>
+              <ChevronLeft className="size-4 shrink-0 ltr:rotate-180" aria-hidden />
+            </Button>
+          )}
         </div>
       </div>
     </form>
