@@ -146,7 +146,7 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
 
       {/* On phones the main action stays within thumb reach. */}
       {isActive && (
-        <div className="bg-background/95 sticky bottom-0 -mx-4 -mb-6 border-t px-4 py-3 sm:hidden">
+        <div className="bg-background/95 sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 -mb-6 border-t px-4 py-3 sm:hidden">
           {recordButton("h-12 w-full text-base")}
         </div>
       )}

@@ -45,7 +45,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
       dir={getDirection(locale)}
       className={`${appSans.variable} ${quranFont.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      {/* With the phone tab bar showing, leave room for it at the bottom. */}
+      <body className="flex min-h-full flex-col has-data-tabbar:pb-[calc(4rem+env(safe-area-inset-bottom))] sm:has-data-tabbar:pb-0">
         <NextIntlClientProvider>
           {children}
           <SiteFooter />
