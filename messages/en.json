@@ -327,7 +327,7 @@
     "myTitle": "My students",
     "summary": "{count, plural, =0 {No students} one {# student} other {# students}}",
     "empty": "No students yet.",
-    "emptyHint": "Add students from a class page.",
+    "emptyHint": "Add your first student with the “Add student” button above.",
     "search": "Search",
     "searchPlaceholder": "Search by student, parent or teacher…",
     "filterClass": "Filter by class",
@@ -342,7 +342,12 @@
     "parents": "Parents",
     "noParent": "No parent",
     "pending": "Pending",
-    "emptyTeacherHint": "Students in your classes appear here once an admin adds them."
+    "emptyTeacherHint": "Students in your classes appear here once an admin adds them.",
+    "addStudent": "Add student",
+    "close": "Close",
+    "class": "Class",
+    "chooseClass": "Choose a class",
+    "createClassFirst": "Create a class first in the Classes tab, then add students to it."
   },
   "Contact": {
     "call": "Call {name}",

@@ -299,6 +299,31 @@ test("anyone can save their phone number on their account page", async ({ page }
   await expect(page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)")).toHaveValue("+44 20 7946 0000");
 });
 
+test("an admin adds a student from the Students tab", async ({ page }) => {
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.getByRole("link", { name: "الطلاب" }).click();
+
+  const name = `جديد ${Date.now()}`;
+  await page.getByRole("button", { name: "إضافة طالب" }).click();
+  await page.getByLabel("اسم الطالب").fill(name);
+  await page.getByLabel("الحلقة", { exact: true }).selectOption({ label: "حلقة ب" });
+  await page.getByRole("button", { name: "إضافة", exact: true }).click();
+  const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name }) });
+  await expect(row.getByRole("link", { name: "حلقة ب" })).toBeVisible();
+
+  // The same name again asks first; a second press adds it.
+  await page.getByLabel("اسم الطالب").fill(name);
+  await page.getByLabel("الحلقة", { exact: true }).selectOption({ label: "حلقة ب" });
+  await page.getByRole("button", { name: "إضافة", exact: true }).click();
+  await expect(page.getByText("يوجد طالب بهذا الاسم")).toBeVisible();
+  await page.getByRole("button", { name: "إضافة", exact: true }).click();
+  await expect(page.getByRole("link", { name })).toHaveCount(2);
+});
+
 test("an admin archives a student without a class", async ({ page }) => {
   await page.goto("/ar/login");
   await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");

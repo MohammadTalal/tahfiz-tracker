@@ -108,6 +108,14 @@ export async function enrollStudent(
   return { status: "success" };
 }
 
+/** Adds a new student from the Students page; the class comes from the form. */
+export async function addStudent(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const classId = formData.get("classId");
+  if (!idSchema.safeParse(classId).success)
+    return { status: "error", error: "invalid", fieldErrors: { classId: "required" } };
+  return enrollStudent(classId as string, _prev, formData);
+}
+
 /** Adds a student who has no class to this class. */
 export async function addExistingStudent(
   classId: string,

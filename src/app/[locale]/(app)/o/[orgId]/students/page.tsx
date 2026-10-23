@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { AddStudentPanel } from "@/features/workspace/components/add-student-panel";
 import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
 import { DateLabel, PassageLabel, RatingBadge } from "@/features/workspace/components/display";
 import { PhoneLink } from "@/features/workspace/components/phone-link";
@@ -71,6 +72,11 @@ export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[o
           )
         }
       />
+      {org.isAdmin && (
+        <div className="flex">
+          <AddStudentPanel classes={classes.map((c) => ({ id: c.id, name: c.name }))} />
+        </div>
+      )}
       {students.length === 0 ? (
         <EmptyState
           icon={Users}
