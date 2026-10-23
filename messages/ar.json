@@ -379,8 +379,6 @@
     "statClasses": "الحلقات",
     "statMyClasses": "حلقاتي",
     "statTeachers": "المعلمون",
-    "statWeekLessons": "دروس آخر ٧ أيام",
-    "vsLastWeek": "{count} عن الأسبوع الماضي",
     "attentionTitle": "يحتاجون متابعة",
     "attentionNone": "كل الطلاب لهم دروس حديثة. أحسنتم!",
     "reasonNever": "لا دروس بعد",
@@ -399,10 +397,10 @@
     "todoNoParents": "{count, plural, one {طالب بلا ولي أمر مرتبط} two {طالبان بلا ولي أمر مرتبط} other {# طلاب بلا ولي أمر مرتبط}}",
     "myClassesTitle": "حلقاتي",
     "pagesCount": "{count, plural, one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}",
-    "monthTotal": "مجموع الحفظ هذا الشهر: {count, plural, one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}",
     "todayTitle": "حلقات اليوم",
     "todayNone": "لا حلقات اليوم.",
-    "todayNoDays": "حدّد أيام كل حلقة من صفحتها لتظهر هنا."
+    "todayNoDays": "حدّد أيام كل حلقة من صفحتها لتظهر هنا.",
+    "statMonthPages": "صفحات حُفظت في {month}"
   },
   "Juz": {
     "label": "الجزء {juz}"

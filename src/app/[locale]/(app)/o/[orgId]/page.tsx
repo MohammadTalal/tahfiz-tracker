@@ -53,23 +53,20 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
 
   const today = todayIn(org.timezone);
   const weekStart = addDays(today, -6);
-  const twoWeeksStart = addDays(today, -13);
   const monthStart = `${today.slice(0, 8)}01`;
   const [name, classes, students, lessons, teachers, news] = await Promise.all([
     getProfileName(user.id),
     getClasses(orgId, user.id, org.isAdmin),
     getStudentDirectory(orgId),
-    getRecentLessons(orgId, monthStart < twoWeeksStart ? monthStart : twoWeeksStart),
+    getRecentLessons(orgId, monthStart < weekStart ? monthStart : weekStart),
     org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
     getNews([orgId]),
   ]);
   const t = await getTranslations("OrgDashboard");
   const number = (n: number) => n.toLocaleString(locale === "ar" ? "ar-u-nu-arab" : "en");
 
-  // This week against last week.
-  const recent = lessons.filter((l) => l.lesson_date >= twoWeeksStart);
-  const weekLessons = recent.filter((l) => l.lesson_date >= weekStart);
-  const lastWeekCount = recent.length - weekLessons.length;
+  // Lessons in the last 7 days, for the greeting.
+  const weekLessons = lessons.filter((l) => l.lesson_date >= weekStart);
 
   // Classes that meet today, in the organization's time zone.
   const todayWeekday = weekdayOf(today);
@@ -207,13 +204,8 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
             : []),
           {
             icon: BookOpenCheck,
-            label: t("statWeekLessons"),
-            value: (
-              <span className="flex items-baseline gap-2">
-                {number(weekLessons.length)}
-                <Trend current={weekLessons.length} previous={lastWeekCount} />
-              </span>
-            ),
+            label: t("statMonthPages", { month: monthName }),
+            value: roundPages(monthPages).toLocaleString(locale === "ar" ? "ar-u-nu-arab" : "en"),
           },
         ]}
       />
@@ -330,11 +322,6 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                 ))}
               </ol>
             )}
-            {monthPages > 0 && (
-              <p className="text-muted-foreground border-t pt-2 text-xs">
-                {t("monthTotal", { count: roundPages(monthPages) })}
-              </p>
-            )}
           </div>
 
           {org.isAdmin && (
@@ -392,18 +379,6 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
         </aside>
       </div>
     </>
-  );
-}
-
-/** "↑ 3" / "↓ 2" against last week; nothing when equal. */
-async function Trend({ current, previous }: { current: number; previous: number }) {
-  const t = await getTranslations("OrgDashboard");
-  if (current === previous) return null;
-  const up = current > previous;
-  return (
-    <span className={up ? "text-success text-xs font-medium" : "text-muted-foreground text-xs font-medium"}>
-      {up ? "↑" : "↓"} {t("vsLastWeek", { count: Math.abs(current - previous) })}
-    </span>
   );
 }
 

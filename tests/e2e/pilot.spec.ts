@@ -279,6 +279,7 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
   // Dashboard: greeting, this week's activity and the latest lessons.
   await expect(page.getByRole("heading", { level: 1, name: "Imam Khalid" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "أخبار الجهة" })).toBeVisible();
+  await expect(page.getByText(/صفحات حُفظت في/)).toBeVisible();
   await expect(page.getByRole("heading", { name: /حلقات اليوم/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "النشاط في آخر أسبوعين" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "أحدث الدروس" })).toHaveCount(0);

@@ -379,8 +379,6 @@
     "statClasses": "Classes",
     "statMyClasses": "My classes",
     "statTeachers": "Teachers",
-    "statWeekLessons": "Lessons, last 7 days",
-    "vsLastWeek": "{count} vs last week",
     "attentionTitle": "Needs attention",
     "attentionNone": "Every student has had a recent lesson. Well done!",
     "reasonNever": "No lessons yet",
@@ -399,10 +397,10 @@
     "todoNoParents": "{count, plural, one {# student without a linked parent} other {# students without a linked parent}}",
     "myClassesTitle": "My classes",
     "pagesCount": "{count, plural, one {# page} other {# pages}}",
-    "monthTotal": "Memorized this month: {count, plural, one {# page} other {# pages}}",
     "todayTitle": "Today's classes",
     "todayNone": "No classes today.",
-    "todayNoDays": "Set each class's days on its page to see them here."
+    "todayNoDays": "Set each class's days on its page to see them here.",
+    "statMonthPages": "Pages memorized in {month}"
   },
   "Juz": {
     "label": "Juz {juz}"
