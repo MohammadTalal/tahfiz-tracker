@@ -15,6 +15,7 @@ import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { addDays, todayIn } from "@/lib/dates";
 import { isId } from "@/lib/ids";
+import { toneClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
 /** Admin view of the teachers: their classes, students, contact and this week's lessons. */
@@ -103,13 +104,13 @@ export default async function TeachersPage({ params }: PageProps<"/[locale]/o/[o
                           <Link
                             key={c.id}
                             href={`/o/${orgId}/classes/${c.id}`}
-                            className="bg-surface-tint hover:border-primary/40 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors duration-150"
+                            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-opacity duration-150 hover:opacity-80 ${toneClasses(c.id)}`}
                           >
-                            <GraduationCap className="text-primary size-4" aria-hidden />
+                            <GraduationCap className="size-4" aria-hidden />
                             <span dir="auto" className="font-medium">
                               {c.name}
                             </span>
-                            <span className="text-muted-foreground text-xs">
+                            <span className="text-xs opacity-80">
                               {to("students", { count: c.studentCount })}
                             </span>
                           </Link>

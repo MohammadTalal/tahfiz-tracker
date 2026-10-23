@@ -18,6 +18,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { toneClasses } from "@/lib/tones";
 
 type TreeClass = Awaited<ReturnType<typeof getOrganizationTree>>[number];
 
@@ -113,7 +114,7 @@ function ClassBranch({
         href={`/o/${orgId}/classes/${cls.id}`}
         className="hover:text-primary flex w-fit items-center gap-2 font-medium transition-colors duration-150"
       >
-        <span className="bg-mint text-primary grid size-7 place-items-center rounded-md" aria-hidden>
+        <span className={`grid size-7 place-items-center rounded-md ${toneClasses(cls.id)}`} aria-hidden>
           <GraduationCap className="size-4" />
         </span>
         {cls.name}

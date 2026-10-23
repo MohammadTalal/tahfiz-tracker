@@ -13,6 +13,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { toneClasses } from "@/lib/tones";
 
 /** All classes (admins) or the user's own (teachers), with students and teachers. */
 export default async function ClassesPage({ params }: PageProps<"/[locale]/o/[orgId]/classes">) {
@@ -51,7 +52,7 @@ export default async function ClassesPage({ params }: PageProps<"/[locale]/o/[or
               >
                 <span className="flex items-center gap-3">
                   <span
-                    className="bg-mint text-primary grid size-11 shrink-0 place-items-center rounded-lg"
+                    className={`grid size-11 shrink-0 place-items-center rounded-lg ${toneClasses(c.id)}`}
                     aria-hidden
                   >
                     <GraduationCap className="size-5" />

@@ -21,6 +21,7 @@ import {
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { toneClasses } from "@/lib/tones";
 
 export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgId]/classes/[classId]">) {
   const { locale, orgId, classId } = await params;
@@ -51,7 +52,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
       <PageHeader
         back={{ href: `/o/${orgId}/classes`, label: tn("classes") }}
         leading={
-          <span className="bg-mint text-primary grid size-12 place-items-center rounded-xl" aria-hidden>
+          <span className={`grid size-12 place-items-center rounded-xl ${toneClasses(classId)}`} aria-hidden>
             <Users className="size-6" />
           </span>
         }

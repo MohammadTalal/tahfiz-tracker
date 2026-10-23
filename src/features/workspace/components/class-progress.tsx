@@ -1,16 +1,15 @@
 import { cn } from "cn";
-import { ChevronLeft, PenLine, Users } from "lucide-react";
+import { ChevronLeft, PenLine } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { InitialAvatar } from "@/components/layout/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import type { StudentProgress } from "../queries";
 import { UnenrollStudentButton } from "./class-students";
-import { DateLabel, JuzProgress, PassageLabel, RatingBadge } from "./display";
+import { JuzProgress, PassageLabel, RatingBadge } from "./display";
 
 /**
- * A class at a glance: each student's current memorization, last lesson and
- * linked parents, with progress through their current juz. A table on wide
+ * A class at a glance: each student's progress through their current juz,
+ * what they are memorizing now, and their last rating. A table on wide
  * screens, stacked rows on phones. `canRecord` adds a one-tap "record
  * lesson" button per row; `canManage` a button to unlink the student.
  */
@@ -31,8 +30,8 @@ export function ClassProgress({
   // The "memorizing now" column only appears when some student has one.
   const showMemorizing = students.some((s) => s.memorizing);
   const columns = showMemorizing
-    ? "md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_1rem]"
-    : "md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)_1rem]";
+    ? "md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_8rem_1rem]"
+    : "md:grid-cols-[minmax(0,1.4fr)_8rem_1rem]";
   return (
     <div className="bg-card overflow-hidden rounded-xl border shadow-(--shadow-soft)">
       <div
@@ -44,8 +43,7 @@ export function ClassProgress({
       >
         <span>{t("student")}</span>
         {showMemorizing && <span>{t("memorizingNow")}</span>}
-        <span>{t("lastLesson")}</span>
-        <span>{t("parents")}</span>
+        <span>{t("lastRating")}</span>
         <span />
       </div>
       <ul className="divide-y">
@@ -76,40 +74,17 @@ export function ClassProgress({
                 showMemorizing && <span className="hidden md:block" />
               )}
 
-              <span className="col-span-2 flex flex-wrap items-center gap-2 text-sm md:col-span-1">
-                <span className="text-muted-foreground text-xs md:hidden">{t("lastLesson")}</span>
+              {/* Last rating only; dates and parents are on the student's page. */}
+              <span className="col-start-2 row-start-1 justify-self-end text-sm md:col-start-auto md:row-start-auto md:justify-self-start">
                 {s.lastLesson ? (
-                  <>
-                    <span className="text-muted-foreground text-xs">
-                      <DateLabel date={s.lastLesson.lesson_date} />
-                    </span>
-                    <RatingBadge rating={s.lastLesson.performance_rating} />
-                  </>
+                  <RatingBadge rating={s.lastLesson.performance_rating} />
                 ) : (
-                  <span className="text-subtle-foreground">{t("noLessonsYet")}</span>
-                )}
-              </span>
-
-              <span className="col-span-2 flex min-w-0 flex-wrap items-center gap-1.5 text-sm md:col-span-1">
-                <span className="text-muted-foreground text-xs md:hidden">{t("parents")}</span>
-                {s.parents.length === 0 ? (
-                  <Badge variant="outline">{t("notLinked")}</Badge>
-                ) : (
-                  s.parents.map((p, i) => (
-                    <Badge
-                      key={i}
-                      variant={p.status === "verified" ? "success" : "outline"}
-                      className="max-w-full"
-                    >
-                      <Users aria-hidden />
-                      <span className="truncate">{p.name}</span>
-                    </Badge>
-                  ))
+                  <span className="text-subtle-foreground text-xs">{t("noLessonsYet")}</span>
                 )}
               </span>
 
               <ChevronLeft
-                className="text-subtle-foreground col-start-2 row-start-1 size-4 justify-self-end md:col-start-auto md:row-start-auto ltr:rotate-180"
+                className="text-subtle-foreground hidden size-4 justify-self-end md:block ltr:rotate-180"
                 aria-hidden
               />
             </Link>

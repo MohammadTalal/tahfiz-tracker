@@ -43,6 +43,18 @@
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-gold-foreground: var(--gold-foreground);
+  --color-tone-emerald: var(--tone-emerald);
+  --color-tone-emerald-soft: var(--tone-emerald-soft);
+  --color-tone-sky: var(--tone-sky);
+  --color-tone-sky-soft: var(--tone-sky-soft);
+  --color-tone-amber: var(--tone-amber);
+  --color-tone-amber-soft: var(--tone-amber-soft);
+  --color-tone-rose: var(--tone-rose);
+  --color-tone-rose-soft: var(--tone-rose-soft);
+  --color-tone-violet: var(--tone-violet);
+  --color-tone-violet-soft: var(--tone-violet-soft);
+  --color-tone-teal: var(--tone-teal);
+  --color-tone-teal-soft: var(--tone-teal-soft);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
@@ -110,6 +122,19 @@
   --warning-soft: #fbf1e0;
   --info: #3975b8;
   --info-soft: #e9f1fa;
+  /* Tones: class and avatar colours (soft background + readable text). */
+  --tone-emerald-soft: #e3f4ea;
+  --tone-emerald: #146c43;
+  --tone-sky-soft: #e3f0fb;
+  --tone-sky: #1d5f9e;
+  --tone-amber-soft: #fbf0dc;
+  --tone-amber: #8a5a0b;
+  --tone-rose-soft: #fbe5e8;
+  --tone-rose: #a3324a;
+  --tone-violet-soft: #eee8fb;
+  --tone-violet: #5b3fa8;
+  --tone-teal-soft: #ddf3f1;
+  --tone-teal: #11706a;
   --destructive-soft: #fbeaea;
 
   --chart-1: #145a45;
@@ -162,6 +187,19 @@
   --warning-soft: #33270f;
   --info: #7aaee6;
   --info-soft: #162536;
+  /* Tones: class and avatar colours (soft background + readable text). */
+  --tone-emerald-soft: #17342a;
+  --tone-emerald: #8fd8b0;
+  --tone-sky-soft: #15283b;
+  --tone-sky: #8fc3f0;
+  --tone-amber-soft: #33280f;
+  --tone-amber: #f0c77a;
+  --tone-rose-soft: #3a1d24;
+  --tone-rose: #f2a3b3;
+  --tone-violet-soft: #271f3d;
+  --tone-violet: #c3b2f3;
+  --tone-teal-soft: #12302e;
+  --tone-teal: #86d9d2;
   --destructive-soft: #3a1a1a;
 
   --chart-1: #4fae88;

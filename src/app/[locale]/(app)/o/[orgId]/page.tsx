@@ -34,6 +34,7 @@ import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { addDays, daysBetween, todayIn } from "@/lib/dates";
 import { isId } from "@/lib/ids";
+import { toneClasses } from "@/lib/tones";
 import { pagesInPassages } from "@/lib/quran/divisions";
 import { passageFromRow } from "@/lib/quran/format";
 import type { Passage } from "@/lib/quran/passage";
@@ -273,7 +274,9 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                       href={`/o/${orgId}/classes/${c.id}`}
                       className="hover:bg-surface-tint -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors duration-150"
                     >
-                      <span className="bg-mint text-primary grid size-8 shrink-0 place-items-center rounded-lg">
+                      <span
+                        className={`grid size-8 shrink-0 place-items-center rounded-lg ${toneClasses(c.id)}`}
+                      >
                         <GraduationCap className="size-4" aria-hidden />
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col">
@@ -363,7 +366,9 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                       href={`/o/${orgId}/classes/${c.id}`}
                       className="hover:bg-surface-tint -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors duration-150"
                     >
-                      <span className="bg-mint text-primary grid size-8 shrink-0 place-items-center rounded-lg">
+                      <span
+                        className={`grid size-8 shrink-0 place-items-center rounded-lg ${toneClasses(c.id)}`}
+                      >
                         <GraduationCap className="size-4" aria-hidden />
                       </span>
                       <span dir="auto" className="flex-1 truncate font-medium">

@@ -175,7 +175,8 @@
     "days": "Class days",
     "noDays": "Choose the days this class meets.",
     "daysHint": "Saved automatically.",
-    "noDaysTeacher": "The admin has not set the class days yet."
+    "noDaysTeacher": "The admin has not set the class days yet.",
+    "lastRating": "Last rating"
   },
   "Student": {
     "archive": "Archive {name}",

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { AddStudentPanel } from "@/features/workspace/components/add-student-panel";
 import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
-import { DateLabel, JuzProgress, PassageLabel, RatingBadge } from "@/features/workspace/components/display";
+import { JuzProgress, PassageLabel, RatingBadge } from "@/features/workspace/components/display";
 import { PhoneLink } from "@/features/workspace/components/phone-link";
 import { type DirectoryRow, StudentDirectory } from "@/features/workspace/components/student-directory";
 import {
@@ -21,6 +21,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { toneClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
 /** Every student the user may see, with class, teachers, parents and phone numbers. */
@@ -117,8 +118,7 @@ async function StudentRow({
             </span>
           ) : null}
           {s.lastLesson ? (
-            <span className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs">
-              {t("lastLesson")} <DateLabel date={s.lastLesson.lesson_date} />
+            <span className="flex">
               <RatingBadge rating={s.lastLesson.performance_rating} />
             </span>
           ) : (
@@ -153,9 +153,9 @@ async function StudentRow({
             <Link
               key={c.id}
               href={`/o/${orgId}/classes/${c.id}`}
-              className="hover:text-primary flex w-fit items-center gap-1.5 font-medium transition-colors duration-150"
+              className={`flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 font-medium transition-opacity duration-150 hover:opacity-80 ${toneClasses(c.id)}`}
             >
-              <GraduationCap className="text-primary size-4" aria-hidden />
+              <GraduationCap className="size-4" aria-hidden />
               <span dir="auto">{c.name}</span>
             </Link>
           ))
