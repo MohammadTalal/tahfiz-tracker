@@ -32,6 +32,8 @@ import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { addDays, daysBetween, todayIn } from "@/lib/dates";
 import { isId } from "@/lib/ids";
+import { pagesInPassage } from "@/lib/quran/divisions";
+import { passageFromRow } from "@/lib/quran/format";
 
 const STALE_AFTER_DAYS = 7;
 const WEAK_RATINGS = new Set(["needs_improvement", "not_completed"]);
@@ -47,35 +49,46 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
 
   const today = todayIn(org.timezone);
   const weekStart = addDays(today, -6);
+  const twoWeeksStart = addDays(today, -13);
+  const monthStart = `${today.slice(0, 8)}01`;
   const [name, classes, students, lessons, teachers] = await Promise.all([
     getProfileName(user.id),
     getClasses(orgId, user.id, org.isAdmin),
     getStudentDirectory(orgId),
-    getRecentLessons(orgId, addDays(today, -13)),
+    getRecentLessons(orgId, monthStart < twoWeeksStart ? monthStart : twoWeeksStart),
     org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
   ]);
   const t = await getTranslations("OrgDashboard");
   const number = (n: number) => n.toLocaleString(locale === "ar" ? "ar-u-nu-arab" : "en");
 
   // Lessons per day for the last 14 days.
+  const recent = lessons.filter((l) => l.lesson_date >= twoWeeksStart);
   const perDay = new Map<string, number>();
-  for (const l of lessons) perDay.set(l.lesson_date, (perDay.get(l.lesson_date) ?? 0) + 1);
+  for (const l of recent) perDay.set(l.lesson_date, (perDay.get(l.lesson_date) ?? 0) + 1);
   const days = Array.from({ length: 14 }, (_, i) => {
     const date = addDays(today, i - 13);
     return { date, count: perDay.get(date) ?? 0 };
   });
-  const weekLessons = lessons.filter((l) => l.lesson_date >= weekStart);
-  const lastWeekCount = lessons.length - weekLessons.length;
+  const weekLessons = recent.filter((l) => l.lesson_date >= weekStart);
+  const lastWeekCount = recent.length - weekLessons.length;
 
-  // Stars of the week: most "excellent" lessons in the last 7 days.
-  const excellent = new Map<string, { id: string; name: string; count: number }>();
-  for (const l of weekLessons) {
-    if (l.performance_rating !== "excellent") continue;
-    const s = excellent.get(l.student_id) ?? { id: l.student_id, name: l.studentName, count: 0 };
-    s.count += 1;
-    excellent.set(l.student_id, s);
+  // Stars of the month: most Mushaf pages recorded since the 1st of this month.
+  const pagesByStudent = new Map<string, { id: string; name: string; pages: number }>();
+  for (const l of lessons) {
+    if (l.lesson_date < monthStart) continue;
+    const s = pagesByStudent.get(l.student_id) ?? { id: l.student_id, name: l.studentName, pages: 0 };
+    s.pages += pagesInPassage(passageFromRow(l));
+    pagesByStudent.set(l.student_id, s);
   }
-  const stars = [...excellent.values()].sort((a, b) => b.count - a.count).slice(0, 3);
+  const roundPages = (pages: number) => Math.round(pages * 10) / 10;
+  const stars = [...pagesByStudent.values()]
+    .filter((s) => roundPages(s.pages) > 0)
+    .sort((a, b) => b.pages - a.pages || a.name.localeCompare(b.name))
+    .slice(0, 5);
+  const monthPages = [...pagesByStudent.values()].reduce((sum, s) => sum + s.pages, 0);
+  const monthName = new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(
+    new Date(`${monthStart}T00:00:00Z`),
+  );
 
   // Enrolled students who have not had a lesson lately or struggled last time.
   const attention = students
@@ -240,13 +253,13 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
           </Section>
 
           <Section title={t("recentTitle")}>
-            {lessons.length === 0 ? (
+            {recent.length === 0 ? (
               <p className="bg-card text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
                 {t("recentNone")}
               </p>
             ) : (
               <ol className="bg-card divide-y overflow-hidden rounded-xl border shadow-(--shadow-soft)">
-                {lessons.slice(0, 6).map((l) => (
+                {recent.slice(0, 6).map((l) => (
                   <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
                     <Link
                       href={`/o/${orgId}/students/${l.student_id}`}
@@ -274,11 +287,12 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
             <h2 className="flex items-center gap-2 font-semibold">
               <Star className="text-gold fill-gold size-5" aria-hidden />
               {t("starsTitle")}
+              <span className="text-muted-foreground ms-auto text-xs font-normal">{monthName}</span>
             </h2>
             {stars.length === 0 ? (
               <p className="text-muted-foreground text-sm">{t("starsNone")}</p>
             ) : (
-              <ol className="flex flex-col gap-2">
+              <ol className="flex flex-col gap-1">
                 {stars.map((s, i) => (
                   <li key={s.id}>
                     <Link
@@ -289,13 +303,18 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                         {number(i + 1)}
                       </span>
                       <span className="flex-1 truncate font-medium">{s.name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {t("excellentCount", { count: s.count })}
+                      <span className="text-sm font-semibold whitespace-nowrap">
+                        {t("pagesCount", { count: roundPages(s.pages) })}
                       </span>
                     </Link>
                   </li>
                 ))}
               </ol>
+            )}
+            {monthPages > 0 && (
+              <p className="text-muted-foreground border-t pt-2 text-xs">
+                {t("monthTotal", { count: roundPages(monthPages) })}
+              </p>
             )}
           </div>
 

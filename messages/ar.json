@@ -378,9 +378,8 @@
     "andMore": "و{count} آخرون…",
     "recentTitle": "أحدث الدروس",
     "recentNone": "لا دروس في آخر أسبوعين.",
-    "starsTitle": "نجوم الأسبوع",
-    "starsNone": "تظهر هنا أسماء أصحاب التقدير «ممتاز» هذا الأسبوع.",
-    "excellentCount": "{count, plural, one {ممتاز مرة} two {ممتاز مرتين} other {ممتاز # مرات}}",
+    "starsTitle": "نجوم الشهر",
+    "starsNone": "يظهر هنا أكثر خمسة طلاب حفظًا (بالصفحات) هذا الشهر.",
     "todoTitle": "مهام الإعداد",
     "todoNone": "كل شيء مُعدّ. ما شاء الله!",
     "todoNoClasses": "أنشئ أول حلقة",
@@ -389,6 +388,8 @@
     "todoIdleTeachers": "{count, plural, one {معلم غير مُسند} two {معلمان غير مُسندين} other {# معلمين غير مُسندين}}",
     "todoStudentsNoClass": "{count, plural, one {طالب بدون حلقة} two {طالبان بدون حلقة} other {# طلاب بدون حلقة}}",
     "todoNoParents": "{count, plural, one {طالب بلا ولي أمر مرتبط} two {طالبان بلا ولي أمر مرتبط} other {# طلاب بلا ولي أمر مرتبط}}",
-    "myClassesTitle": "حلقاتي"
+    "myClassesTitle": "حلقاتي",
+    "pagesCount": "{count, plural, one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}",
+    "monthTotal": "مجموع الحفظ هذا الشهر: {count, plural, one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}"
   }
 }

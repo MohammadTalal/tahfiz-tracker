@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { JUZ_STARTS, PAGE_STARTS } from "@/lib/quran/divisions-data";
-import { passageForJuz, passageForPages } from "@/lib/quran/divisions";
+import { pagesInPassage, passageForJuz, passageForPages } from "@/lib/quran/divisions";
 import { passageSchema } from "@/lib/quran/passage";
 
 describe("division data", () => {
@@ -55,5 +55,28 @@ describe("passageForJuz", () => {
 
   it("juz 29 starts with Al-Mulk", () => {
     expect(passageForJuz(29)).toMatchObject({ startSurah: 67, startAyah: 1, endSurah: 77, endAyah: 50 });
+  });
+});
+
+describe("pagesInPassage", () => {
+  const p = (startSurah: number, startAyah: number, endSurah: number, endAyah: number) => ({
+    startSurah,
+    startAyah,
+    endSurah,
+    endAyah,
+  });
+
+  it("counts a whole page as 1", () => {
+    expect(pagesInPassage(p(1, 1, 1, 7))).toBeCloseTo(1); // page 1: Al-Fatiha
+    expect(pagesInPassage(p(2, 1, 2, 5))).toBeCloseTo(1); // page 2: Al-Baqarah 1–5
+  });
+
+  it("counts part of a page by its share of ayahs", () => {
+    expect(pagesInPassage(p(2, 1, 2, 2))).toBeCloseTo(2 / 5);
+  });
+
+  it("adds up across pages", () => {
+    expect(pagesInPassage(p(1, 1, 2, 5))).toBeCloseTo(2);
+    expect(pagesInPassage(passageForJuz(30)!)).toBeCloseTo(23); // pages 582–604
   });
 });

@@ -250,6 +250,9 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
   await expect(page.getByRole("heading", { level: 1, name: "Imam Khalid" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "النشاط في آخر أسبوعين" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "أحدث الدروس" })).toBeVisible();
+  // Stars of the month: ranked by Mushaf pages (the seed's lesson today is Al-Mulk 6–10).
+  const stars = page.getByRole("heading", { name: /نجوم الشهر/ }).locator("..");
+  await expect(stars.getByRole("link", { name: /أحمد/ })).toContainText("صفحة");
 
   // Classes: each class with its teachers.
   await nav.getByRole("link", { name: "الحلقات" }).click();
