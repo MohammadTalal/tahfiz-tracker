@@ -553,7 +553,7 @@ isOneToOne: false
                            },
 "student_progress":
 { Args: { "p_student_ids": (string)[] }; Returns: {
-              "last_lesson_date": string,"last_rating": Database["public"]['Enums']["performance_rating"],"mem_end_ayah": number,"mem_end_surah": number,"mem_start_ayah": number,"mem_start_surah": number,"student_id": string
+              "done_end_ayah": number,"done_end_surah": number,"done_start_ayah": number,"done_start_surah": number,"last_lesson_date": string,"last_rating": Database["public"]['Enums']["performance_rating"],"mem_end_ayah": number,"mem_end_surah": number,"mem_start_ayah": number,"mem_start_surah": number,"student_id": string
             }[]
                            },
 "unassigned_students":

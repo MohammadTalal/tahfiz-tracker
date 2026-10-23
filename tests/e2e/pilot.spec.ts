@@ -109,8 +109,11 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
 
   await test.step("records straight from the class page, then saves and moves to the next student", async () => {
     await page.goto(classUrl);
-    // Progress through the current juz shows on each row (عمر: Al-Mulk, juz 29).
-    await expect(page.getByRole("link", { name: startsWith("عمر") }).getByText("الجزء ٢٩")).toBeVisible();
+    // Each row shows only what the student is memorizing now (no rating, no juz bar).
+    const omarRow = page.getByRole("link", { name: startsWith("عمر") });
+    await expect(omarRow).toContainText("يحفظ الآن");
+    await expect(omarRow).toContainText("الملك ١١–١٥");
+    await expect(omarRow.getByText("الجزء ٢٩")).toHaveCount(0);
     await page.getByLabel("اسم الطالب").fill("زيد"); // sorts before عمر
     await page.getByLabel("اسم الطالب").press("Enter");
     await page.getByRole("link", { name: "تسجيل درس لـ زيد" }).click();

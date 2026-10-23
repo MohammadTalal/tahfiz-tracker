@@ -43,7 +43,8 @@ delete from public.organization_news;
 reset role;
 select is((select meeting_days from public.classes where id = 'cccccccc-0000-0000-0000-0000000000c1'), '{6,1,3}'::smallint[],
   'teachers cannot change class days');
-select is((select count(*)::int from public.organization_news), 1, 'teachers cannot delete news');
+select is((select count(*)::int from public.organization_news where organization_id = 'cccccccc-0000-0000-0000-0000000000f1'), 1,
+  'teachers cannot delete news');
 
 -- Parent of a student reads; an outsider does not.
 select set_config('request.jwt.claims', '{"sub":"cccccccc-0000-0000-0000-000000000003","role":"authenticated"}', true);
@@ -60,7 +61,8 @@ select set_config('request.jwt.claims', '{"sub":"cccccccc-0000-0000-0000-0000000
 set local role authenticated;
 delete from public.organization_news;
 reset role;
-select is((select count(*)::int from public.organization_news), 0, 'admins delete news');
+select is((select count(*)::int from public.organization_news where organization_id = 'cccccccc-0000-0000-0000-0000000000f1'), 0,
+  'admins delete news');
 
 select * from finish();
 rollback;

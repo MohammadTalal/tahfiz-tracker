@@ -1,7 +1,7 @@
 -- Admin-only student edits, student_progress, and phone numbers with a country code.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email, aud, role) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'rf.admin@test.local', 'authenticated', 'authenticated'),
@@ -40,6 +40,8 @@ select is((select last_rating::text from public.student_progress(array['aaaaaaaa
   'excellent', 'student_progress returns the latest lesson');
 select is((select count(*)::int from public.student_progress(array['aaaaaaaa-0000-0000-0000-0000000000a1']::uuid[])
   where last_lesson_date = current_date), 1, 'with its date');
+select is((select done_end_ayah from public.student_progress(array['aaaaaaaa-0000-0000-0000-0000000000a1']::uuid[])),
+  10::smallint, 'and the passage of the last completed lesson');
 
 -- Phone numbers need a country code.
 select throws_ok($$ insert into public.profile_contacts (user_id, phone) values ('aaaaaaaa-0000-0000-0000-000000000002', '0791234567') $$,

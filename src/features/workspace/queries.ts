@@ -289,6 +289,8 @@ export type StudentProgress = {
   id: string;
   name: string;
   memorizing: { start_surah: number; start_ayah: number; end_surah: number; end_ayah: number } | null;
+  /** The passage of the last completed lesson (not "not completed"). */
+  lastMemorized: { start_surah: number; start_ayah: number; end_surah: number; end_ayah: number } | null;
   lastLesson: {
     lesson_date: string;
     performance_rating: Database["public"]["Enums"]["performance_rating"];
@@ -343,6 +345,18 @@ export async function getStudentsProgress(
               start_ayah: p.mem_start_ayah,
               end_surah: p.mem_end_surah,
               end_ayah: p.mem_end_ayah,
+            }
+          : null,
+      lastMemorized:
+        p?.done_start_surah != null &&
+        p.done_start_ayah != null &&
+        p.done_end_surah != null &&
+        p.done_end_ayah != null
+          ? {
+              start_surah: p.done_start_surah,
+              start_ayah: p.done_start_ayah,
+              end_surah: p.done_end_surah,
+              end_ayah: p.done_end_ayah,
             }
           : null,
       lastLesson:
