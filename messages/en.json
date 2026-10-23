@@ -227,16 +227,14 @@
     "discardDraft": "Start over",
     "suggested": "Suggested from the last lesson — change it if needed.",
     "fromAssignment": "Filled from the current assignment.",
-    "selectSurah": "Choose a surah",
     "heading": "Record lesson",
     "back": "Back",
     "extras": "Extras",
     "extrasHint": "Notes, mistakes, revision, date",
     "ayahCount": "Ayahs in this surah: {count}",
-    "ayahLess": "Decrease {field}",
-    "ayahMore": "Increase {field}",
     "saveAndNext": "Save & next: {name}",
-    "positionInClass": "{className} · {n} of {total}"
+    "positionInClass": "{className} · {n} of {total}",
+    "juz": "Juz"
   },
   "Rating": {
     "excellent": "Excellent",

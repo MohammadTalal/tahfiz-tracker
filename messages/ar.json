@@ -227,16 +227,14 @@
     "discardDraft": "البدء من جديد",
     "suggested": "مقترح بناءً على الدرس السابق — عدّله إن لزم.",
     "fromAssignment": "مأخوذ من المهمة الحالية.",
-    "selectSurah": "اختر سورة",
     "heading": "تسجيل درس",
     "back": "رجوع",
     "extras": "إضافات",
     "extrasHint": "ملاحظات، أخطاء، مراجعة، التاريخ",
     "ayahCount": "عدد آيات السورة: {count}",
-    "ayahLess": "إنقاص {field}",
-    "ayahMore": "زيادة {field}",
     "saveAndNext": "حفظ والتالي: {name}",
-    "positionInClass": "{className} — {n} من {total}"
+    "positionInClass": "{className} — {n} من {total}",
+    "juz": "الجزء"
   },
   "Rating": {
     "excellent": "ممتاز",

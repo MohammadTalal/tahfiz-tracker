@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { JUZ_STARTS, PAGE_STARTS } from "@/lib/quran/divisions-data";
-import { pagesInPassage, pagesInPassages, passageForJuz, passageForPages } from "@/lib/quran/divisions";
+import {
+  juzOf,
+  pagesInPassage,
+  pagesInPassages,
+  passageForJuz,
+  passageForPages,
+  surahsInJuz,
+} from "@/lib/quran/divisions";
 import { passageSchema } from "@/lib/quran/passage";
 
 describe("division data", () => {
@@ -100,5 +107,22 @@ describe("pagesInPassages", () => {
 
   it("is zero for no passages", () => {
     expect(pagesInPassages([])).toBe(0);
+  });
+});
+
+describe("juzOf and surahsInJuz", () => {
+  it("finds the juz of an ayah", () => {
+    expect(juzOf(1, 1)).toBe(1);
+    expect(juzOf(2, 141)).toBe(1);
+    expect(juzOf(2, 142)).toBe(2);
+    expect(juzOf(67, 1)).toBe(29);
+    expect(juzOf(114, 6)).toBe(30);
+  });
+
+  it("lists the surahs of a juz with their ayahs inside it", () => {
+    expect(surahsInJuz(2)).toEqual([{ surah: 2, fromAyah: 142, toAyah: 252 }]);
+    expect(surahsInJuz(30)[0]).toEqual({ surah: 78, fromAyah: 1, toAyah: 40 });
+    expect(surahsInJuz(30)).toHaveLength(37);
+    expect(surahsInJuz(30).at(-1)).toEqual({ surah: 114, fromAyah: 1, toAyah: 6 });
   });
 });

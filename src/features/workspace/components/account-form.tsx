@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { TextField } from "@/components/forms/field";
 import { FormMessage } from "@/components/forms/form-message";
@@ -12,6 +12,10 @@ import { updateAccount } from "../actions";
 export function AccountForm({ displayName, phone }: { displayName: string; phone: string }) {
   const t = useTranslations("Account");
   const [state, action] = useActionState(updateAccount, idleState);
+  // Controlled fields: React clears uncontrolled forms after each submit,
+  // which would erase a number the person is about to correct.
+  const [name, setName] = useState(displayName);
+  const [phoneValue, setPhoneValue] = useState(phone);
   useEffect(() => {
     if (state.status === "success") toast.success(t("saved"));
   }, [state, t]);
@@ -22,7 +26,8 @@ export function AccountForm({ displayName, phone }: { displayName: string; phone
       <TextField
         label={t("name")}
         name="displayName"
-        defaultValue={displayName}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
         required
         maxLength={100}
         autoComplete="name"
@@ -33,7 +38,8 @@ export function AccountForm({ displayName, phone }: { displayName: string; phone
         name="phone"
         type="tel"
         dir="ltr"
-        defaultValue={phone}
+        value={phoneValue}
+        onChange={(e) => setPhoneValue(e.target.value)}
         maxLength={24}
         autoComplete="tel"
         placeholder="+1 604 555 0100"

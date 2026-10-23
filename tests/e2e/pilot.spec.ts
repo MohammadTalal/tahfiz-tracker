@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { authEmailLink, PASSWORD, signUpAndGetConfirmLink } from "./helpers";
 
 // Full pilot workflow against the local Supabase stack (`npm run db:start`).
@@ -8,6 +8,12 @@ test.use({ locale: "ar-SA" });
 // A student's row link starts with their name; the row's "record a lesson for …"
 // button also contains it, so match from the start.
 const startsWith = (text: string) => new RegExp(`^${text}`);
+
+// The lesson form picks a passage with wheels (juz, surah, from, to).
+const wheel = (page: Page, name: string) => page.getByRole("listbox", { name, exact: true });
+const pick = (page: Page, name: string, option: string) =>
+  wheel(page, name).getByRole("option", { name: option, exact: true }).click();
+const picked = (page: Page, name: string) => wheel(page, name).getByRole("option", { selected: true });
 
 test("teacher records a lesson and a parent follows progress", async ({ page, browser }, testInfo) => {
   test.slow();
@@ -58,11 +64,13 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await expect(page.getByText("لم يكتمل", { exact: true })).toBeInViewport();
     await expect(page.getByRole("button", { name: "حفظ الدرس" })).toBeInViewport();
 
-    await page.getByLabel("السورة", { exact: true }).selectOption("67"); // by value
+    await pick(page, "الجزء", "٢٩");
+    await pick(page, "السورة", "الملك");
     // Picking a surah fills the whole surah: ayah 1 to its last ayah.
-    await expect(page.getByLabel("من الآية", { exact: true })).toHaveValue("1");
-    await expect(page.getByLabel("إلى الآية", { exact: true })).toHaveValue("30");
-    await page.getByLabel("إلى الآية", { exact: true }).fill("5");
+    await expect(picked(page, "من الآية")).toHaveText("١");
+    await expect(picked(page, "إلى الآية")).toHaveText("٣٠");
+    await pick(page, "إلى الآية", "٥");
+    await expect(picked(page, "إلى الآية")).toHaveText("٥");
     await page.getByRole("group").getByText("جيد", { exact: true }).click();
     // Next memorization is suggested automatically from the passage.
     await expect(page.getByRole("checkbox", { name: /الحفظ القادم: الملك ٦–١٠/ })).toBeChecked();
@@ -82,8 +90,9 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
   await test.step("records the next lesson while offline, then it saves when back online", async () => {
     await page.getByRole("link", { name: "تسجيل درس" }).click();
     await expect(page.getByText("مأخوذ من المهمة الحالية.")).toBeVisible();
-    await expect(page.getByLabel("من الآية", { exact: true })).toHaveValue("6");
-    await expect(page.getByLabel("إلى الآية", { exact: true })).toHaveValue("10");
+    await expect(picked(page, "السورة")).toHaveText("الملك");
+    await expect(picked(page, "من الآية")).toHaveText("٦");
+    await expect(picked(page, "إلى الآية")).toHaveText("١٠");
     await page.getByRole("group").getByText("ممتاز", { exact: true }).click();
 
     await page.context().setOffline(true);
@@ -98,16 +107,6 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     ).toBeVisible(); // new assignment
   });
 
-  await test.step("an ayah past the end of the surah is caught", async () => {
-    await page.getByRole("link", { name: "تسجيل درس" }).click();
-    await page.getByLabel("السورة", { exact: true }).selectOption("1"); // Al-Fatiha: 7 ayahs
-    await page.getByLabel("إلى الآية", { exact: true }).fill("9");
-    await page.getByRole("group").getByText("جيد", { exact: true }).click();
-    await page.getByRole("button", { name: "حفظ الدرس" }).click();
-    await expect(page.getByText("عدد آيات السورة أقل من ذلك")).toBeVisible();
-    await page.getByRole("link", { name: "رجوع" }).click();
-  });
-
   await test.step("records straight from the class page, then saves and moves to the next student", async () => {
     await page.goto(classUrl);
     // Progress through the current juz shows on each row (عمر: Al-Mulk, juz 29).
@@ -116,9 +115,13 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await page.getByLabel("اسم الطالب").press("Enter");
     await page.getByRole("link", { name: "تسجيل درس لـ زيد" }).click();
     await expect(page.getByText("حلقة الفجر — ١ من ٢")).toBeVisible();
-    await page.getByLabel("السورة", { exact: true }).selectOption("114"); // An-Nas: 1 to 6
-    await page.getByRole("button", { name: "إنقاص إلى الآية" }).click();
-    await expect(page.getByLabel("إلى الآية", { exact: true })).toHaveValue("5");
+    // A new student starts at juz 30; the surah wheel lists only its surahs.
+    await expect(picked(page, "الجزء")).toHaveText("٣٠");
+    await expect(wheel(page, "السورة").getByRole("option", { name: "البقرة" })).toHaveCount(0);
+    await pick(page, "السورة", "الناس");
+    await expect(picked(page, "إلى الآية")).toHaveText("٦");
+    await pick(page, "إلى الآية", "٥");
+    await expect(picked(page, "إلى الآية")).toHaveText("٥");
     await page.getByRole("group").getByText("جيد", { exact: true }).click();
     await page.getByRole("button", { name: /حفظ والتالي: عمر/ }).click();
     await expect(page.getByRole("heading", { level: 1, name: "عمر" })).toBeVisible();
@@ -307,17 +310,20 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
   );
 });
 
-test("anyone can save their phone number on their account page", async ({ page }) => {
-  await page.goto("/ar/login");
-  await page.getByLabel("البريد الإلكتروني").fill("other@demo.local");
-  await page.getByLabel("كلمة المرور").fill("password123");
-  await page.getByRole("button", { name: "دخول" }).click();
-  await expect(page).toHaveURL(/\/ar\/o\//);
+test("anyone can save their phone number on their account page", async ({ page }, testInfo) => {
+  // A fresh account per run: two runs signed in as one user at once can
+  // invalidate each other's session.
+  await page.goto("/ar/signup");
+  const email = `phone-${testInfo.project.name}-${Date.now()}@e2e.local`;
+  await page.goto(await signUpAndGetConfirmLink(page, "صاحب الهاتف", email));
+  await expect(page).toHaveURL(/\/ar\/onboarding$/);
   await page.getByRole("link", { name: "حسابي" }).click();
 
   await page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)").fill("079 123 4567");
   await page.getByRole("button", { name: "حفظ" }).click();
   await expect(page.getByText("ابدأ بـ + ورمز الدولة")).toBeVisible();
+  // What was typed stays after the error, so it can be corrected.
+  await expect(page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)")).toHaveValue("079 123 4567");
 
   await page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)").fill("+44 20 7946 0000");
   await page.getByRole("button", { name: "حفظ" }).click();

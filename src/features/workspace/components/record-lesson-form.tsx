@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { recordLesson } from "../actions";
 import { MISTAKES, RATINGS, recordLessonSchema, type RecordLessonInput } from "../schemas";
 import { RATING_STYLE } from "./rating-style";
-import { type PassageDraft, SurahAyahFields } from "./surah-ayah-fields";
+import { DEFAULT_JUZ, type PassageDraft, passageInJuz, SurahAyahFields } from "./surah-ayah-fields";
 
 type Rating = (typeof RATINGS)[number];
 type Mistake = (typeof MISTAKES)[number];
@@ -68,7 +68,9 @@ function initialState(defaultPassage: Passage | null): FormState {
   return {
     idempotencyKey: "",
     lessonDate: "",
-    passage: defaultPassage ?? {},
+    // Never blank: the passage wheels need a value, and a blank one would be
+    // filled in (and saved as a draft) by the wheels themselves.
+    passage: defaultPassage ?? passageInJuz(DEFAULT_JUZ),
     mistakes: [],
     parentFeedback: "",
     assignNext: isComplete(nextMemorization),
@@ -454,7 +456,6 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
               onChange={(assignNext) => update({ assignNext })}
             >
               <SurahAyahFields
-                compact
                 value={state.nextMemorization}
                 onChange={(nextMemorization) => update({ nextMemorization, nextTouched: true })}
                 errors={passageErrors(errors, "nextMemorization")}
@@ -467,7 +468,6 @@ function LessonForm({ studentId, studentHref, defaultPassage, defaultSource, ass
               onChange={(assignRevision) => update({ assignRevision })}
             >
               <SurahAyahFields
-                compact
                 value={state.nextRevision}
                 onChange={(nextRevision) => update({ nextRevision })}
                 errors={passageErrors(errors, "nextRevision")}

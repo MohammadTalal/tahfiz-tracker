@@ -89,3 +89,29 @@ export function pagesInPassages(passages: Passage[]): number {
   flush();
   return pages;
 }
+
+/** The juz (1–30) an ayah belongs to. */
+export function juzOf(surah: number, ayah: number): number {
+  const index = globalIndex([surah, ayah]);
+  let juz = 1;
+  for (let j = 0; j < JUZ_STARTS.length; j++) {
+    if (globalIndex(JUZ_STARTS[j]!) <= index) juz = j + 1;
+    else break;
+  }
+  return juz;
+}
+
+/** The surahs in a juz, each with the ayah range of that surah inside the juz. */
+export function surahsInJuz(juz: number): { surah: number; fromAyah: number; toAyah: number }[] {
+  const range = passageForJuz(juz);
+  if (!range) return [];
+  const out = [];
+  for (let surah = range.startSurah; surah <= range.endSurah; surah++) {
+    out.push({
+      surah,
+      fromAyah: surah === range.startSurah ? range.startAyah : 1,
+      toAyah: surah === range.endSurah ? range.endAyah : AYAH_COUNTS[surah - 1]!,
+    });
+  }
+  return out;
+}

@@ -1,200 +1,136 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { Minus, Plus } from "lucide-react";
-import { type ReactNode, useId } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
-import { ayahCount, SURAH_COUNT } from "@/lib/quran/ayah-counts";
+import { useEffect, useMemo } from "react";
+import { ayahCount } from "@/lib/quran/ayah-counts";
+import { JUZ_COUNT, juzOf, surahsInJuz } from "@/lib/quran/divisions";
 import type { Passage } from "@/lib/quran/passage";
 import { SURAH_NAMES } from "@/lib/quran/surah-names";
-import { cn } from "@/lib/utils";
+import { Wheel, WHEEL_ITEM_HEIGHT } from "./wheel";
 
 export type PassageDraft = { startSurah?: number; startAyah?: number; endSurah?: number; endAyah?: number };
 
-const arabicDigits = new Intl.NumberFormat("ar-u-nu-arab");
+/** Juz 30 (An-Naba to An-Nas) is where most memorization starts. */
+export const DEFAULT_JUZ = 30;
 
-/** "٦٧ الملك" / "67 Al-Mulk": number first, no punctuation, so it reads right in RTL. */
-function surahLabel(n: number, locale: string) {
-  const name = locale === "ar" ? SURAH_NAMES[n - 1]!.ar : SURAH_NAMES[n - 1]!.en;
-  return `${locale === "ar" ? arabicDigits.format(n) : n} ${name}`;
+const range = (from: number, to: number) =>
+  Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
+
+/** A surah inside a juz, from the first to the last of its ayahs in that juz. */
+export function passageInJuz(juz: number, surah?: number): Passage {
+  const parts = surahsInJuz(juz);
+  const part = parts.find((p) => p.surah === surah) ?? parts[0]!;
+  return { startSurah: part.surah, startAyah: part.fromAyah, endSurah: part.surah, endAyah: part.toAyah };
 }
 
-function toAyah(value: string): number | undefined {
-  const n = Number(value.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)));
-  return value.trim() && Number.isInteger(n) ? n : undefined;
+function isComplete(p: PassageDraft): p is Passage {
+  return !!(p.startSurah && p.startAyah && p.endSurah && p.endAyah);
 }
+
+const COLUMNS = "grid grid-cols-[3.5rem_minmax(0,1fr)_3.5rem_3.5rem] gap-1";
 
 /**
- * A passage inside one surah: surah, then "from ayah" and "to ayah" on one
- * row. The end surah always follows the start surah.
+ * A passage inside one surah, picked with four wheels like the iPhone alarm:
+ * juz, then a surah of that juz, then from and to ayah. Picking a juz or a
+ * surah selects that surah's ayahs inside the juz; "to" never goes below
+ * "from".
  */
 export function SurahAyahFields({
   value,
   onChange,
   errors = {},
-  compact = false,
 }: {
   value: PassageDraft;
   onChange: (value: PassageDraft) => void;
   errors?: Partial<Record<keyof Passage, string>>;
-  compact?: boolean;
 }) {
   const t = useTranslations("Lesson");
   const te = useTranslations("Errors");
   const locale = useLocale();
-  const id = useId();
-  const count = value.startSurah ? ayahCount(value.startSurah) : undefined;
-  const ayahError = errors.startAyah ?? errors.endAyah;
-  const fmt = (n: number) => (locale === "ar" ? arabicDigits.format(n) : String(n));
+  const numbers = useMemo(() => new Intl.NumberFormat(locale === "ar" ? "ar-u-nu-arab" : "en"), [locale]);
 
-  return (
-    <div className={cn("flex flex-col", compact ? "gap-2" : "gap-3")}>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`${id}-surah`}>{t("surah")}</Label>
-        <NativeSelect
-          id={`${id}-surah`}
-          value={value.startSurah ?? ""}
-          aria-invalid={errors.startSurah ? true : undefined}
-          onChange={(e) => {
-            const surah = Number(e.target.value);
-            // A new surah defaults to the whole surah: first to last ayah.
-            onChange({ startSurah: surah, startAyah: 1, endSurah: surah, endAyah: ayahCount(surah) });
-          }}
-          className="h-12 text-base"
-        >
-          <option value="" disabled>
-            {t("selectSurah")}
-          </option>
-          {Array.from({ length: SURAH_COUNT }, (_, i) => (
-            <option key={i + 1} value={i + 1}>
-              {surahLabel(i + 1, locale)}
-            </option>
-          ))}
-        </NativeSelect>
-        {errors.startSurah && <p className="text-destructive text-sm">{te(errors.startSurah)}</p>}
-      </div>
+  // The wheels always show a passage; a blank one starts at the default juz.
+  const complete = isComplete(value);
+  useEffect(() => {
+    if (!complete) onChange(passageInJuz(DEFAULT_JUZ));
+  }, [complete, onChange]);
 
-      <div className="grid grid-cols-2 gap-3">
-        <AyahInput
-          id={`${id}-from`}
-          label={t("fromAyah")}
-          value={value.startAyah}
-          min={1}
-          max={value.endAyah ?? count}
-          invalid={!!errors.startAyah}
-          onChange={(startAyah) => onChange({ ...value, startAyah, endSurah: value.startSurah })}
-        />
-        <AyahInput
-          id={`${id}-to`}
-          label={t("toAyah")}
-          placeholder={count !== undefined ? String(count) : undefined}
-          value={value.endAyah}
-          min={value.startAyah ?? 1}
-          max={count}
-          invalid={!!errors.endAyah}
-          onChange={(endAyah) => onChange({ ...value, endAyah, endSurah: value.startSurah })}
-        />
-      </div>
-      {ayahError ? (
-        <p role="alert" className="text-destructive -mt-1 text-sm">
-          {te(ayahError)}
-        </p>
-      ) : (
-        count !== undefined && (
-          <p className="text-muted-foreground -mt-1 text-xs">{t("ayahCount", { count: fmt(count) })}</p>
-        )
-      )}
-    </div>
+  const passage = complete ? value : passageInJuz(DEFAULT_JUZ);
+  const juz = juzOf(passage.startSurah, passage.startAyah);
+  const count = ayahCount(passage.startSurah) ?? passage.endAyah;
+
+  const juzItems = useMemo(
+    () => range(1, JUZ_COUNT).map((j) => ({ value: j, label: numbers.format(j) })),
+    [numbers],
   );
-}
+  const surahItems = useMemo(
+    () =>
+      surahsInJuz(juz).map((p) => ({
+        value: p.surah,
+        label: locale === "ar" ? SURAH_NAMES[p.surah - 1]!.ar : SURAH_NAMES[p.surah - 1]!.en,
+      })),
+    [juz, locale],
+  );
+  const fromItems = useMemo(
+    () => range(1, count).map((a) => ({ value: a, label: numbers.format(a) })),
+    [count, numbers],
+  );
+  const toItems = useMemo(
+    () => range(passage.startAyah, count).map((a) => ({ value: a, label: numbers.format(a) })),
+    [passage.startAyah, count, numbers],
+  );
 
-function AyahInput({
-  id,
-  label,
-  value,
-  invalid,
-  placeholder,
-  min,
-  max,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value?: number;
-  invalid: boolean;
-  placeholder?: string;
-  min: number;
-  max?: number;
-  onChange: (value: number | undefined) => void;
-}) {
-  const t = useTranslations("Lesson");
-  // One tap moves the ayah by one, within the surah and the range.
-  const step = (delta: number) => {
-    const base = value ?? (delta > 0 ? min - 1 : (max ?? min) + 1);
-    const nextValue = Math.max(min, Math.min(max ?? Infinity, base + delta));
-    onChange(nextValue);
-  };
+  const error = errors.startSurah ?? errors.startAyah ?? errors.endAyah;
+
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-1" dir="ltr">
-        <StepButton
-          label={t("ayahLess", { field: label })}
-          disabled={value !== undefined && value <= min}
-          onClick={() => step(-1)}
-        >
-          <Minus className="size-4" aria-hidden />
-        </StepButton>
-        <Input
-          id={id}
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          enterKeyHint="next"
-          dir="ltr"
-          autoComplete="off"
-          placeholder={placeholder}
-          value={value ?? ""}
-          onChange={(e) => onChange(toAyah(e.target.value))}
-          onFocus={(e) => e.target.select()}
-          aria-invalid={invalid ? true : undefined}
-          className="h-12 min-w-0 flex-1 px-1 text-center text-lg font-semibold"
-        />
-        <StepButton
-          label={t("ayahMore", { field: label })}
-          disabled={value !== undefined && max !== undefined && value >= max}
-          onClick={() => step(1)}
-        >
-          <Plus className="size-4" aria-hidden />
-        </StepButton>
+      <div className={`${COLUMNS} text-muted-foreground text-center text-xs font-medium`} aria-hidden>
+        <span>{t("juz")}</span>
+        <span>{t("surah")}</span>
+        <span>{t("fromAyah")}</span>
+        <span>{t("toAyah")}</span>
       </div>
+      <div className="relative">
+        {/* The selection band shared by all four wheels. */}
+        <div
+          aria-hidden
+          className="bg-mint border-primary/15 pointer-events-none absolute inset-x-0 rounded-lg border"
+          style={{ top: 2 * WHEEL_ITEM_HEIGHT, height: WHEEL_ITEM_HEIGHT }}
+        />
+        <div className={`relative ${COLUMNS}`}>
+          <Wheel label={t("juz")} items={juzItems} value={juz} onChange={(j) => onChange(passageInJuz(j))} />
+          <Wheel
+            label={t("surah")}
+            items={surahItems}
+            value={passage.startSurah}
+            onChange={(surah) => onChange(passageInJuz(juz, surah))}
+            itemClassName={locale === "ar" ? "font-quran" : undefined}
+          />
+          <Wheel
+            label={t("fromAyah")}
+            items={fromItems}
+            value={passage.startAyah}
+            onChange={(startAyah) =>
+              onChange({ ...passage, startAyah, endAyah: Math.max(startAyah, passage.endAyah) })
+            }
+          />
+          <Wheel
+            label={t("toAyah")}
+            items={toItems}
+            value={passage.endAyah}
+            onChange={(endAyah) => onChange({ ...passage, endAyah })}
+          />
+        </div>
+      </div>
+      {error ? (
+        <p role="alert" className="text-destructive text-sm">
+          {te(error)}
+        </p>
+      ) : (
+        <p className="text-muted-foreground text-center text-xs">
+          {t("ayahCount", { count: numbers.format(count) })}
+        </p>
+      )}
     </div>
-  );
-}
-
-function StepButton({
-  label,
-  disabled,
-  onClick,
-  children,
-}: {
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="bg-surface-tint hover:bg-accent text-primary grid size-10 shrink-0 place-items-center rounded-lg border transition-colors duration-150 disabled:opacity-40"
-    >
-      {children}
-    </button>
   );
 }
