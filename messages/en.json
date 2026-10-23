@@ -169,7 +169,8 @@
     "parents": "Parents",
     "notLinked": "No parent",
     "noLessonsYet": "No lessons yet",
-    "none": "—"
+    "none": "—",
+    "noStudentsTeacherHint": "An admin of your organization will add students to this class."
   },
   "Student": {
     "archive": "Archive {name}",
@@ -340,7 +341,8 @@
     "classAndTeacher": "Class & teacher",
     "parents": "Parents",
     "noParent": "No parent",
-    "pending": "Pending"
+    "pending": "Pending",
+    "emptyTeacherHint": "Students in your classes appear here once an admin adds them."
   },
   "Contact": {
     "call": "Call {name}",

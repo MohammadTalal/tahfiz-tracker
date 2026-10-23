@@ -23,10 +23,6 @@ insert into public.class_enrollments (organization_id, class_id, student_id) val
 select set_config('request.jwt.claims', '{"sub":"88888888-0000-0000-0000-000000000002","role":"authenticated"}', true);
 set local role authenticated;
 
-select throws_ok($$ select public.enroll_new_student('88888888-0000-0000-0000-0000000000c1', ' nada ') $$,
-  '23505', 'duplicate_name', 'a matching name is refused by default');
-select lives_ok($$ select public.enroll_new_student('88888888-0000-0000-0000-0000000000c1', 'Nada', true) $$,
-  'and allowed when confirmed');
 select throws_ok($$ select public.archive_student('88888888-0000-0000-0000-0000000000a1') $$,
   '42501', null, 'teachers cannot archive students');
 
@@ -34,6 +30,11 @@ select throws_ok($$ select public.archive_student('88888888-0000-0000-0000-00000
 reset role;
 select set_config('request.jwt.claims', '{"sub":"88888888-0000-0000-0000-000000000001","role":"authenticated"}', true);
 set local role authenticated;
+
+select throws_ok($$ select public.enroll_new_student('88888888-0000-0000-0000-0000000000c1', ' nada ') $$,
+  '23505', 'duplicate_name', 'a matching name is refused by default');
+select lives_ok($$ select public.enroll_new_student('88888888-0000-0000-0000-0000000000c1', 'Nada', true) $$,
+  'and allowed when confirmed');
 
 select lives_ok($$ select public.archive_student('88888888-0000-0000-0000-0000000000a1') $$,
   'admins can archive a student');

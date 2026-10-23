@@ -80,11 +80,15 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
 
       <StatStrip
         stats={[
-          {
-            icon: BookMarked,
-            label: t("currentMemorization"),
-            value: currentMemorization ? <PassageLabel row={currentMemorization} /> : t("none"),
-          },
+          ...(currentMemorization
+            ? [
+                {
+                  icon: BookMarked,
+                  label: t("currentMemorization"),
+                  value: <PassageLabel row={currentMemorization} />,
+                },
+              ]
+            : []),
           {
             icon: CalendarDays,
             label: t("lastLesson"),

@@ -169,7 +169,8 @@
     "parents": "أولياء الأمور",
     "notLinked": "لا ولي أمر",
     "noLessonsYet": "لا دروس بعد",
-    "none": "—"
+    "none": "—",
+    "noStudentsTeacherHint": "سيضيف مشرف الجهة الطلاب إلى هذه الحلقة."
   },
   "Student": {
     "archive": "أرشفة {name}",
@@ -340,7 +341,8 @@
     "classAndTeacher": "الحلقة والمعلم",
     "parents": "أولياء الأمور",
     "noParent": "لا ولي أمر",
-    "pending": "بانتظار التأكيد"
+    "pending": "بانتظار التأكيد",
+    "emptyTeacherHint": "يظهر هنا طلاب حلقاتك بعد أن يضيفهم المشرف."
   },
   "Contact": {
     "call": "اتصال بـ {name}",

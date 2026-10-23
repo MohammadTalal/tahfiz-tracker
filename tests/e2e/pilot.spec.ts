@@ -192,10 +192,26 @@ test("seeded student page shows lessons and dated assignments", async ({ page })
   await expect(main.getByText("النبإ ١ – الناس ٦")).toBeVisible(); // cross-surah revision (Tanzil spelling)
 });
 
-test("a teacher adds a student to their own class but cannot export", async ({ page }) => {
-  // Uses supabase/seed.sql: teacher@demo.local teaches "حلقة ب" and is not an admin.
+test("a teacher sees their class but cannot change who is in it, or export", async ({ page }) => {
+  // Uses supabase/seed.sql: teacher@demo.local teaches "حلقة ب" (Yusuf) and is not an admin.
   await page.goto("/ar/login");
   await page.getByLabel("البريد الإلكتروني").fill("teacher@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000002");
+  await expect(page.getByRole("link", { name: /يوسف/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "إضافة طالب" })).toHaveCount(0);
+  await expect(page.getByLabel("اسم الطالب")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^إخراج / })).toHaveCount(0);
+
+  const response = await page.request.get("/api/orgs/d1000000-0000-0000-0000-000000000001/lessons-csv");
+  expect(response.status()).toBe(403);
+});
+
+test("an admin adds, unlinks and re-adds students in a class", async ({ page }) => {
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
   await page.getByLabel("كلمة المرور").fill("password123");
   await page.getByRole("button", { name: "دخول" }).click();
   await expect(page).toHaveURL(/\/ar\/o\//);
@@ -221,9 +237,6 @@ test("a teacher adds a student to their own class but cannot export", async ({ p
   await expect(page.getByRole("link", { name })).toHaveCount(1);
   await page.getByLabel("اسم الطالب").press("Enter");
   await expect(page.getByRole("link", { name })).toHaveCount(2);
-
-  const response = await page.request.get("/api/orgs/d1000000-0000-0000-0000-000000000001/lessons-csv");
-  expect(response.status()).toBe(403);
 });
 
 test("an admin moves between the dashboard, classes, teachers and students", async ({ page }) => {

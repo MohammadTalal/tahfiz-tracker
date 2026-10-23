@@ -56,7 +56,11 @@ export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[o
         description={t("summary", { count: students.length })}
       />
       {students.length === 0 ? (
-        <EmptyState icon={Users} title={t("empty")} description={t("emptyHint")} />
+        <EmptyState
+          icon={Users}
+          title={t("empty")}
+          description={org.isAdmin ? t("emptyHint") : t("emptyTeacherHint")}
+        />
       ) : (
         <StudentDirectory rows={rows} classes={classes.map((c) => ({ id: c.id, name: c.name }))} />
       )}

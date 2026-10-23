@@ -31,7 +31,8 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
   const cls = await getClassWithRoster(orgId, classId, user.id);
   if (!cls) notFound();
 
-  const canAdd = org.isAdmin || cls.taughtByMe;
+  // Only admins change who is in a class; teachers record lessons.
+  const canAdd = org.isAdmin;
   const [progress, classTeachers, orgTeachers, unassigned] = await Promise.all([
     getStudentsProgress(cls.students),
     getClassTeachers(classId),
@@ -64,7 +65,7 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
               <EmptyState
                 icon={UserPlus}
                 title={t("noStudents")}
-                description={canAdd ? t("noStudentsHint") : undefined}
+                description={canAdd ? t("noStudentsHint") : t("noStudentsTeacherHint")}
               />
             ) : (
               <ClassProgress orgId={orgId} classId={classId} students={progress} canManage={canAdd} />
