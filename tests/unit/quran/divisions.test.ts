@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { JUZ_STARTS, PAGE_STARTS } from "@/lib/quran/divisions-data";
-import { pagesInPassage, passageForJuz, passageForPages } from "@/lib/quran/divisions";
+import { pagesInPassage, pagesInPassages, passageForJuz, passageForPages } from "@/lib/quran/divisions";
 import { passageSchema } from "@/lib/quran/passage";
 
 describe("division data", () => {
@@ -78,5 +78,27 @@ describe("pagesInPassage", () => {
   it("adds up across pages", () => {
     expect(pagesInPassage(p(1, 1, 2, 5))).toBeCloseTo(2);
     expect(pagesInPassage(passageForJuz(30)!)).toBeCloseTo(23); // pages 582–604
+  });
+});
+
+describe("pagesInPassages", () => {
+  const p = (startSurah: number, startAyah: number, endSurah: number, endAyah: number) => ({
+    startSurah,
+    startAyah,
+    endSurah,
+    endAyah,
+  });
+
+  it("counts a repeated passage once", () => {
+    expect(pagesInPassages([p(1, 1, 1, 7), p(1, 1, 1, 7)])).toBeCloseTo(1);
+  });
+
+  it("merges overlapping and adjacent passages", () => {
+    expect(pagesInPassages([p(2, 3, 2, 5), p(2, 1, 2, 4)])).toBeCloseTo(1);
+    expect(pagesInPassages([p(1, 1, 1, 7), p(2, 1, 2, 5)])).toBeCloseTo(2);
+  });
+
+  it("is zero for no passages", () => {
+    expect(pagesInPassages([])).toBe(0);
   });
 });

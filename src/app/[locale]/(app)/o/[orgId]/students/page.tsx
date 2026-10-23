@@ -1,10 +1,11 @@
-import { GraduationCap, UserCheck, Users } from "lucide-react";
+import { Download, GraduationCap, UserCheck, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { InitialAvatar } from "@/components/layout/avatar";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { ArchiveStudentButton } from "@/features/workspace/components/class-students";
 import { DateLabel, PassageLabel, RatingBadge } from "@/features/workspace/components/display";
 import { PhoneLink } from "@/features/workspace/components/phone-link";
@@ -19,6 +20,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { cn } from "@/lib/utils";
 
 /** Every student the user may see, with class, teachers, parents and phone numbers. */
 export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[orgId]/students">) {
@@ -34,6 +36,7 @@ export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[o
     getClasses(orgId, user.id, org.isAdmin),
   ]);
   const t = await getTranslations("Students");
+  const to = await getTranslations("Org");
 
   const rows: DirectoryRow[] = students.map((s) => ({
     id: s.id,
@@ -54,6 +57,19 @@ export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[o
       <PageHeader
         title={org.isAdmin ? t("title") : t("myTitle")}
         description={t("summary", { count: students.length })}
+        actions={
+          org.isAdmin && (
+            <a
+              href={`/api/orgs/${orgId}/lessons-csv?locale=${locale}`}
+              download
+              title={to("exportHelp")}
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              <Download className="size-4" aria-hidden />
+              {to("exportLessons")}
+            </a>
+          )
+        }
       />
       {students.length === 0 ? (
         <EmptyState

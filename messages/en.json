@@ -54,7 +54,7 @@
     "same_password": "The new password must be different from your current password.",
     "weak_password": "This password is too easy to guess. Use a longer one with letters and numbers.",
     "duplicate_student": "A student with this name already exists. If it's the same student, pick them from “Student without a class”; if it's a different student, press “Add” again.",
-    "invalid_phone": "Enter a valid phone number, like +1 604 555 0100"
+    "invalid_phone": "Start with + and the country code, like +1 604 555 0100"
   },
   "Auth": {
     "loginTitle": "Log in",
@@ -352,8 +352,8 @@
     "title": "My account",
     "back": "Home",
     "name": "Name",
-    "phone": "Phone number (optional)",
-    "phoneHelp": "Only visible to your organization's admins and your children's teachers.",
+    "phone": "Phone number with country code (optional)",
+    "phoneHelp": "Start with + and the country code. Only visible to your organization’s admins and your children’s teachers.",
     "save": "Save",
     "saved": "Saved"
   },

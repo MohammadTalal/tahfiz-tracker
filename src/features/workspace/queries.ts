@@ -1,11 +1,28 @@
 import "server-only";
 
+import type { PostgrestError } from "@supabase/supabase-js";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 export type MembershipRole = Database["public"]["Enums"]["membership_role"];
 export type OpenAssignmentStatus = Database["public"]["Enums"]["assignment_status"];
+
+// The API returns at most this many rows per request (supabase/config.toml max_rows).
+const PAGE_SIZE = 1000;
+
+/** Runs a query page by page so long lists are never cut off at the row cap. */
+async function fetchAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: PostgrestError | null }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await page(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE_SIZE) return rows;
+  }
+}
 
 const OPEN_STATUSES: OpenAssignmentStatus[] = [
   "assigned",
@@ -265,21 +282,6 @@ export async function getUnassignedStudents(classId: string) {
   return data.map((s) => ({ id: s.id, name: s.display_name }));
 }
 
-/** Active students of the organization who are not in any class (admins; RLS). */
-export async function getOrgUnassignedStudents(orgId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("students")
-    .select("id, display_name, class_enrollments(status)")
-    .eq("organization_id", orgId)
-    .eq("status", "active")
-    .order("display_name");
-  if (error) throw error;
-  return data
-    .filter((s) => !s.class_enrollments.some((e) => e.status === "active"))
-    .map((s) => ({ id: s.id, name: s.display_name }));
-}
-
 export type StudentProgress = {
   id: string;
   name: string;
@@ -292,60 +294,55 @@ export type StudentProgress = {
 };
 
 /**
- * Progress for a set of students in three batched queries (not one per
- * student): current memorization, last lesson and linked parents.
+ * Progress for a set of students: last lesson and current memorization (one
+ * database call that returns one row per student, so long histories are not
+ * loaded), plus linked parents unless `withParents` is false.
  */
 export async function getStudentsProgress(
   students: { id: string; display_name: string }[],
+  { withParents = true }: { withParents?: boolean } = {},
 ): Promise<StudentProgress[]> {
   if (students.length === 0) return [];
   const ids = students.map((s) => s.id);
   const supabase = await createClient();
-  const [lessons, assignments, parents] = await Promise.all([
-    supabase
-      .from("memorization_records")
-      .select("student_id, lesson_date, performance_rating")
-      .in("student_id", ids)
-      .eq("status", "active")
-      .order("lesson_date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("assignments")
-      .select("student_id, start_surah, start_ayah, end_surah, end_ayah")
-      .in("student_id", ids)
-      .eq("assignment_type", "memorization")
-      .in("status", OPEN_STATUSES)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("parent_student_relationships")
-      .select("student_id, status, profiles(display_name)")
-      .in("student_id", ids)
-      .neq("status", "revoked"),
+  const [progress, parents] = await Promise.all([
+    supabase.rpc("student_progress", { p_student_ids: ids }),
+    withParents
+      ? supabase
+          .from("parent_student_relationships")
+          .select("student_id, status, profiles(display_name)")
+          .in("student_id", ids)
+          .neq("status", "revoked")
+      : Promise.resolve({ data: [], error: null }),
   ]);
-  if (lessons.error) throw lessons.error;
-  if (assignments.error) throw assignments.error;
+  if (progress.error) throw progress.error;
   if (parents.error) throw parents.error;
 
+  const byId = new Map(progress.data.map((p) => [p.student_id, p]));
   return students.map((s) => {
-    const last = lessons.data.find((l) => l.student_id === s.id);
-    const current = assignments.data.find((a) => a.student_id === s.id);
+    const p = byId.get(s.id);
     return {
       id: s.id,
       name: s.display_name,
-      memorizing: current
-        ? {
-            start_surah: current.start_surah,
-            start_ayah: current.start_ayah,
-            end_surah: current.end_surah,
-            end_ayah: current.end_ayah,
-          }
-        : null,
-      lastLesson: last
-        ? { lesson_date: last.lesson_date, performance_rating: last.performance_rating }
-        : null,
+      memorizing:
+        p?.mem_start_surah != null &&
+        p.mem_start_ayah != null &&
+        p.mem_end_surah != null &&
+        p.mem_end_ayah != null
+          ? {
+              start_surah: p.mem_start_surah,
+              start_ayah: p.mem_start_ayah,
+              end_surah: p.mem_end_surah,
+              end_ayah: p.mem_end_ayah,
+            }
+          : null,
+      lastLesson:
+        p?.last_lesson_date && p.last_rating
+          ? { lesson_date: p.last_lesson_date, performance_rating: p.last_rating }
+          : null,
       parents: parents.data
-        .filter((p) => p.student_id === s.id)
-        .map((p) => ({ name: p.profiles?.display_name ?? "", status: p.status })),
+        .filter((r) => r.student_id === s.id)
+        .map((r) => ({ name: r.profiles?.display_name ?? "", status: r.status })),
     };
   });
 }
@@ -385,17 +382,21 @@ export type DirectoryStudent = Omit<StudentProgress, "parents"> & {
  */
 export async function getStudentDirectory(orgId: string): Promise<DirectoryStudent[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("students")
-    .select(
-      "id, display_name, class_enrollments(status, classes(id, name, class_teachers(profiles(display_name)))), parent_student_relationships(status, profiles(display_name, profile_contacts(phone)))",
-    )
-    .eq("organization_id", orgId)
-    .eq("status", "active")
-    .order("display_name");
-  if (error) throw error;
+  const data = await fetchAll((from, to) =>
+    supabase
+      .from("students")
+      .select(
+        "id, display_name, class_enrollments(status, classes(id, name, class_teachers(profiles(display_name)))), parent_student_relationships(status, profiles(display_name, profile_contacts(phone)))",
+      )
+      .eq("organization_id", orgId)
+      .eq("status", "active")
+      .order("display_name")
+      .order("id")
+      .range(from, to),
+  );
 
-  const progress = new Map((await getStudentsProgress(data)).map((p) => [p.id, p]));
+  // Parents come from the query above (with phone numbers).
+  const progress = new Map((await getStudentsProgress(data, { withParents: false })).map((p) => [p.id, p]));
   return data.map((s) => {
     const classes = s.class_enrollments
       .filter((e) => e.status === "active" && e.classes)
@@ -417,21 +418,24 @@ export async function getStudentDirectory(orgId: string): Promise<DirectoryStude
   });
 }
 
-/** Lessons from `since` onwards that the user may see, newest first. */
+/** Lessons of active (not archived) students from `since` onwards that the user may see, newest first. */
 export async function getRecentLessons(orgId: string, since: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("memorization_records")
-    .select(
-      "id, student_id, teacher_user_id, lesson_date, performance_rating, start_surah, start_ayah, end_surah, end_ayah, students(display_name), profiles!memorization_records_teacher_user_id_fkey(display_name)",
-    )
-    .eq("organization_id", orgId)
-    .eq("status", "active")
-    .gte("lesson_date", since)
-    .order("lesson_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  if (error) throw error;
+  const data = await fetchAll((from, to) =>
+    supabase
+      .from("memorization_records")
+      .select(
+        "id, student_id, teacher_user_id, lesson_date, performance_rating, start_surah, start_ayah, end_surah, end_ayah, students!inner(display_name, status), profiles!memorization_records_teacher_user_id_fkey(display_name)",
+      )
+      .eq("organization_id", orgId)
+      .eq("status", "active")
+      .eq("students.status", "active")
+      .gte("lesson_date", since)
+      .order("lesson_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   return data.map(({ students, profiles, ...l }) => ({
     ...l,
     studentName: students?.display_name ?? "",

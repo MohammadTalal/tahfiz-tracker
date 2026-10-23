@@ -50,6 +50,8 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
   const currentMemorization = assignments.find((a) => a.assignment_type === "memorization");
   const lastLesson = lessons[0];
 
+  // Archived students keep their history but get no new lessons.
+  const isActive = student.status === "active";
   const recordButton = (className?: string) => (
     <Link href={recordHref} className={cn(buttonVariants({ size: "lg" }), className)}>
       <PenLine className="size-4" aria-hidden />
@@ -66,14 +68,14 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
         description={student.status === "archived" ? t("archivedBadge") : undefined}
         actions={
           <>
-            {org.isAdmin && student.status === "active" && (
+            {org.isAdmin && isActive && (
               <ArchiveStudentButton
                 student={{ id: student.id, name: student.display_name }}
                 redirectTo={`/o/${orgId}`}
                 withLabel
               />
             )}
-            {recordButton("hidden sm:inline-flex")}
+            {isActive && recordButton("hidden sm:inline-flex")}
           </>
         }
       />
@@ -134,9 +136,11 @@ export default async function StudentPage({ params }: PageProps<"/[locale]/o/[or
       </div>
 
       {/* On phones the main action stays within thumb reach. */}
-      <div className="bg-background/95 sticky bottom-0 -mx-4 -mb-6 border-t px-4 py-3 sm:hidden">
-        {recordButton("h-12 w-full text-base")}
-      </div>
+      {isActive && (
+        <div className="bg-background/95 sticky bottom-0 -mx-4 -mb-6 border-t px-4 py-3 sm:hidden">
+          {recordButton("h-12 w-full text-base")}
+        </div>
+      )}
     </>
   );
 }

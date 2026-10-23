@@ -16,16 +16,19 @@ export function PhoneLink({ phone, name }: { phone: string; name: string }) {
         <Phone className="size-3.5" aria-hidden />
         {phone}
       </a>
-      <a
-        href={`https://wa.me/${digits}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-muted-foreground hover:text-primary grid size-7 place-items-center rounded-md transition-colors duration-150"
-        aria-label={t("whatsapp", { name })}
-        title={t("whatsapp", { name })}
-      >
-        <MessageCircle className="size-4" aria-hidden />
-      </a>
+      {/* wa.me needs the international number; older numbers may lack the "+". */}
+      {phone.startsWith("+") && (
+        <a
+          href={`https://wa.me/${digits}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground hover:text-primary grid size-7 place-items-center rounded-md transition-colors duration-150"
+          aria-label={t("whatsapp", { name })}
+          title={t("whatsapp", { name })}
+        >
+          <MessageCircle className="size-4" aria-hidden />
+        </a>
+      )}
     </span>
   );
 }

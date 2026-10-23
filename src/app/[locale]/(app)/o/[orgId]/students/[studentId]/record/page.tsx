@@ -13,8 +13,9 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { isId } from "@/lib/ids";
+import { ayahCount } from "@/lib/quran/ayah-counts";
 import { passageFromRow } from "@/lib/quran/format";
-import { suggestNext } from "@/lib/quran/passage";
+import { type Passage, suggestNext } from "@/lib/quran/passage";
 
 export default async function RecordLessonPage({
   params,
@@ -24,7 +25,7 @@ export default async function RecordLessonPage({
   if (!isId(orgId) || !isId(studentId)) notFound();
   const user = await requireUser();
   const [org, student] = await Promise.all([getOrganizationForStaff(orgId, user.id), getStudent(studentId)]);
-  if (!org || !student || student.organization_id !== orgId) notFound();
+  if (!org || !student || student.organization_id !== orgId || student.status !== "active") notFound();
 
   // Pre-fill: the current memorization assignment, else the passage after the last lesson.
   const [assignments, lessons] = await Promise.all([
@@ -34,7 +35,7 @@ export default async function RecordLessonPage({
   const assignment = assignments.find((a) => a.assignment_type === "memorization");
   const lastLesson = lessons[0];
   const suggestion = lastLesson ? suggestNext(passageFromRow(lastLesson)) : undefined;
-  const defaultPassage = assignment ? passageFromRow(assignment) : (suggestion ?? null);
+  const defaultPassage = assignment ? withinOneSurah(passageFromRow(assignment)) : (suggestion ?? null);
   const defaultSource = assignment ? "assignment" : suggestion ? "suggestion" : null;
 
   const t = await getTranslations("Lesson");
@@ -71,4 +72,13 @@ export default async function RecordLessonPage({
       />
     </div>
   );
+}
+
+/**
+ * The lesson form records one surah at a time. Older assignments may run into
+ * the next surah; pre-fill only their first surah, to its last ayah.
+ */
+function withinOneSurah(p: Passage): Passage {
+  if (p.startSurah === p.endSurah) return p;
+  return { ...p, endSurah: p.startSurah, endAyah: ayahCount(p.startSurah) ?? p.startAyah };
 }

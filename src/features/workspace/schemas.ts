@@ -16,11 +16,11 @@ export const nameSchema = z.object({
 
 export const accountSchema = z.object({
   displayName: z.string().trim().min(1, { error: "required" }).max(100, { error: "tooLong" }),
-  // Optional; same rule as the database check.
+  // Optional; with the country code ("+1 …"), same rule as the database check.
   phone: z
     .string()
     .trim()
-    .regex(/^(\+?[0-9 ()-]{6,24})?$/, { error: "invalid_phone" }),
+    .regex(/^(\+[0-9][0-9 ()-]{5,23})?$/, { error: "invalid_phone" }),
 });
 
 export const RATINGS = ["excellent", "very_good", "good", "needs_improvement", "not_completed"] as const;

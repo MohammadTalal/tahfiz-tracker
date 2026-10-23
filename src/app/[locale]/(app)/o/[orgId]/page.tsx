@@ -32,8 +32,9 @@ import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
 import { addDays, daysBetween, todayIn } from "@/lib/dates";
 import { isId } from "@/lib/ids";
-import { pagesInPassage } from "@/lib/quran/divisions";
+import { pagesInPassages } from "@/lib/quran/divisions";
 import { passageFromRow } from "@/lib/quran/format";
+import type { Passage } from "@/lib/quran/passage";
 
 const STALE_AFTER_DAYS = 7;
 const WEAK_RATINGS = new Set(["needs_improvement", "not_completed"]);
@@ -72,14 +73,22 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
   const weekLessons = recent.filter((l) => l.lesson_date >= weekStart);
   const lastWeekCount = recent.length - weekLessons.length;
 
-  // Stars of the month: most Mushaf pages recorded since the 1st of this month.
-  const pagesByStudent = new Map<string, { id: string; name: string; pages: number }>();
+  // Stars of the month: most Mushaf pages memorized since the 1st of this
+  // month. Lessons rated "not completed" do not count, and a passage recited
+  // more than once counts once.
+  const monthPassages = new Map<string, { id: string; name: string; passages: Passage[] }>();
   for (const l of lessons) {
-    if (l.lesson_date < monthStart) continue;
-    const s = pagesByStudent.get(l.student_id) ?? { id: l.student_id, name: l.studentName, pages: 0 };
-    s.pages += pagesInPassage(passageFromRow(l));
-    pagesByStudent.set(l.student_id, s);
+    if (l.lesson_date < monthStart || l.performance_rating === "not_completed") continue;
+    const s = monthPassages.get(l.student_id) ?? { id: l.student_id, name: l.studentName, passages: [] };
+    s.passages.push(passageFromRow(l));
+    monthPassages.set(l.student_id, s);
   }
+  const pagesByStudent = new Map(
+    [...monthPassages.values()].map((s) => [
+      s.id,
+      { id: s.id, name: s.name, pages: pagesInPassages(s.passages) },
+    ]),
+  );
   const roundPages = (pages: number) => Math.round(pages * 10) / 10;
   const stars = [...pagesByStudent.values()]
     .filter((s) => roundPages(s.pages) > 0)

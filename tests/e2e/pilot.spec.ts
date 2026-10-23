@@ -267,6 +267,10 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
 
   // Students: class, teacher, parent and the parent's phone; search narrows the list.
   await nav.getByRole("link", { name: "الطلاب" }).click();
+  await expect(page.getByRole("link", { name: "تنزيل كل الدروس (CSV)" })).toHaveAttribute(
+    "href",
+    /lessons-csv/,
+  );
   await page.getByLabel("بحث").fill("Abu Ahmad");
   await expect(page.getByRole("link", { name: "أحمد", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "فاطمة" })).toHaveCount(0);
@@ -284,15 +288,15 @@ test("anyone can save their phone number on their account page", async ({ page }
   await expect(page).toHaveURL(/\/ar\/o\//);
   await page.getByRole("link", { name: "حسابي" }).click();
 
-  await page.getByLabel("رقم الهاتف (اختياري)").fill("call me");
+  await page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)").fill("079 123 4567");
   await page.getByRole("button", { name: "حفظ" }).click();
-  await expect(page.getByText("أدخل رقم هاتف صحيحًا")).toBeVisible();
+  await expect(page.getByText("ابدأ بـ + ورمز الدولة")).toBeVisible();
 
-  await page.getByLabel("رقم الهاتف (اختياري)").fill("+44 20 7946 0000");
+  await page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)").fill("+44 20 7946 0000");
   await page.getByRole("button", { name: "حفظ" }).click();
   await expect(page.getByText("تم الحفظ")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("رقم الهاتف (اختياري)")).toHaveValue("+44 20 7946 0000");
+  await expect(page.getByLabel("رقم الهاتف مع رمز الدولة (اختياري)")).toHaveValue("+44 20 7946 0000");
 });
 
 test("an admin archives a student without a class", async ({ page }) => {

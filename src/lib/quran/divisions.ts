@@ -49,8 +49,11 @@ const TOTAL = SURAH_OFFSETS[113]! + AYAH_COUNTS[113]!;
  * its page (an ayah on a 10-ayah page is 0.1). Half a page memorized is 0.5.
  */
 export function pagesInPassage(p: Passage): number {
-  const from = globalIndex([p.startSurah, p.startAyah]);
-  const to = globalIndex([p.endSurah, p.endAyah]);
+  return pagesBetween(globalIndex([p.startSurah, p.startAyah]), globalIndex([p.endSurah, p.endAyah]));
+}
+
+/** Pages covered by global ayah indexes from..to (inclusive). */
+function pagesBetween(from: number, to: number): number {
   let pages = 0;
   for (let page = 0; page < PAGE_COUNT; page++) {
     const start = PAGE_START_INDEX[page]!;
@@ -60,5 +63,29 @@ export function pagesInPassage(p: Passage): number {
     const overlap = Math.min(end, to) - Math.max(start, from) + 1;
     pages += overlap / (end - start + 1);
   }
+  return pages;
+}
+
+/**
+ * Pages covered by several passages together; overlapping or repeated ayahs
+ * count once (re-reciting a passage is not new memorization).
+ */
+export function pagesInPassages(passages: Passage[]): number {
+  const ranges = passages
+    .map((p) => [globalIndex([p.startSurah, p.startAyah]), globalIndex([p.endSurah, p.endAyah])] as const)
+    .sort((a, b) => a[0] - b[0]);
+  let pages = 0;
+  let current: [number, number] | null = null;
+  const flush = () => {
+    if (current) pages += pagesBetween(current[0], current[1]);
+  };
+  for (const [from, to] of ranges) {
+    if (current && from <= current[1] + 1) current[1] = Math.max(current[1], to);
+    else {
+      flush();
+      current = [from, to];
+    }
+  }
+  flush();
   return pages;
 }
