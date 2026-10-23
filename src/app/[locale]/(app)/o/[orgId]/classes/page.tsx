@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { createClass } from "@/features/workspace/actions";
+import { DaysLabel } from "@/features/workspace/components/class-days";
 import { NameForm } from "@/features/workspace/components/simple-forms";
 import { getClasses, getOrganizationForStaff } from "@/features/workspace/queries";
 import { Link } from "@/i18n/navigation";
@@ -62,6 +63,7 @@ export default async function ClassesPage({ params }: PageProps<"/[locale]/o/[or
                     <span className="text-muted-foreground text-sm">
                       {to("students", { count: c.studentCount })}
                     </span>
+                    <DaysLabel days={c.meetingDays} className="text-xs" />
                   </span>
                   <ChevronLeft
                     className="text-subtle-foreground group-hover:text-primary size-4 shrink-0 transition-colors ltr:rotate-180"

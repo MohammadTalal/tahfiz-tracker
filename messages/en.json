@@ -171,7 +171,11 @@
     "noLessonsYet": "No lessons yet",
     "none": "—",
     "noStudentsTeacherHint": "An admin of your organization will add students to this class.",
-    "recordFor": "Record a lesson for {name}"
+    "recordFor": "Record a lesson for {name}",
+    "days": "Class days",
+    "noDays": "Choose the days this class meets.",
+    "daysHint": "Saved automatically.",
+    "noDaysTeacher": "The admin has not set the class days yet."
   },
   "Student": {
     "archive": "Archive {name}",
@@ -377,16 +381,12 @@
     "statTeachers": "Teachers",
     "statWeekLessons": "Lessons, last 7 days",
     "vsLastWeek": "{count} vs last week",
-    "activityTitle": "Activity, last two weeks",
-    "lessonsCount": "{count, plural, =0 {No lessons} one {# lesson} other {# lessons}}",
     "attentionTitle": "Needs attention",
     "attentionNone": "Every student has had a recent lesson. Well done!",
     "reasonNever": "No lessons yet",
     "reasonStale": "{days} days ago",
     "reasonWeak": "Last lesson needs review",
     "andMore": "and {count} more…",
-    "recentTitle": "Latest lessons",
-    "recentNone": "No lessons in the last two weeks.",
     "starsTitle": "Stars of the month",
     "starsNone": "The five students who memorized the most pages this month appear here.",
     "todoTitle": "Setup checklist",
@@ -399,9 +399,26 @@
     "todoNoParents": "{count, plural, one {# student without a linked parent} other {# students without a linked parent}}",
     "myClassesTitle": "My classes",
     "pagesCount": "{count, plural, one {# page} other {# pages}}",
-    "monthTotal": "Memorized this month: {count, plural, one {# page} other {# pages}}"
+    "monthTotal": "Memorized this month: {count, plural, one {# page} other {# pages}}",
+    "todayTitle": "Today's classes",
+    "todayNone": "No classes today.",
+    "todayNoDays": "Set each class's days on its page to see them here."
   },
   "Juz": {
     "label": "Juz {juz}"
+  },
+  "News": {
+    "title": "News",
+    "empty": "No news yet.",
+    "emptyAdmin": "No news yet. Post the first update for all teachers and parents.",
+    "post": "Post news",
+    "newsTitle": "Title",
+    "newsBody": "Details (optional)",
+    "publish": "Publish",
+    "cancel": "Cancel",
+    "posted": "News posted",
+    "delete": "Delete “{title}”",
+    "confirmDelete": "Delete the news “{title}”?",
+    "deleted": "News deleted"
   }
 }

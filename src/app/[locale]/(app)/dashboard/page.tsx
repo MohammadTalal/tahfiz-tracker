@@ -4,7 +4,8 @@ import { InitialAvatar } from "@/components/layout/avatar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Section } from "@/features/workspace/components/display";
-import { getProfileName, getWorkspace } from "@/features/workspace/queries";
+import { NewsFeed } from "@/features/workspace/components/news";
+import { getNews, getProfileName, getWorkspace } from "@/features/workspace/queries";
 import { Link, redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
@@ -32,10 +33,14 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/das
   }
 
   const t = await getTranslations("Dashboard");
+  // Parents see the news of their children's organizations.
+  const childOrgIds = [...new Set(children.map((c) => c.organization_id))];
+  const news = await getNews(childOrgIds);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
       <PageHeader title={name ? t("greeting", { name }) : t("title")} description={t("subtitle")} />
+      {childOrgIds.length > 0 && <NewsFeed posts={news} showOrganization={childOrgIds.length > 1} />}
       {children.length > 0 && (
         <Section title={t("yourChildren")}>
           <ul className="grid gap-3 sm:grid-cols-2">

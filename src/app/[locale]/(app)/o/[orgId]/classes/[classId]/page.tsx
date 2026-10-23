@@ -1,4 +1,4 @@
-import { GraduationCap, UserPlus, Users } from "lucide-react";
+import { CalendarDays, GraduationCap, UserPlus, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { EmptyState } from "@/components/layout/empty-state";
@@ -7,6 +7,7 @@ import { addExistingStudent, assignTeacher, enrollStudent } from "@/features/wor
 import { ClassProgress } from "@/features/workspace/components/class-progress";
 import { AddExistingStudentForm } from "@/features/workspace/components/class-students";
 import { ClassTeachers } from "@/features/workspace/components/class-teachers";
+import { ClassDaysPicker, DaysLabel } from "@/features/workspace/components/class-days";
 import { Panel, Section } from "@/features/workspace/components/display";
 import { NameForm } from "@/features/workspace/components/simple-forms";
 import {
@@ -79,6 +80,15 @@ export default async function ClassPage({ params }: PageProps<"/[locale]/o/[orgI
           </Section>
         </div>
         <aside className="flex flex-col gap-4">
+          <Panel title={t("days")} icon={CalendarDays}>
+            {org.isAdmin ? (
+              <ClassDaysPicker classId={classId} days={cls.meeting_days} />
+            ) : cls.meeting_days.length > 0 ? (
+              <DaysLabel days={cls.meeting_days} />
+            ) : (
+              <p className="text-muted-foreground text-sm">{t("noDaysTeacher")}</p>
+            )}
+          </Panel>
           <Panel title={t("teachers")} icon={GraduationCap}>
             <ClassTeachers
               classId={classId}

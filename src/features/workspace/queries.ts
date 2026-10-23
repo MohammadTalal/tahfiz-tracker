@@ -42,7 +42,7 @@ export async function getWorkspace(userId: string) {
       .eq("status", "active"),
     supabase
       .from("parent_student_relationships")
-      .select("students(id, display_name)")
+      .select("students(id, display_name, organization_id)")
       .eq("parent_user_id", userId)
       .eq("status", "verified"),
   ]);
@@ -90,7 +90,9 @@ export async function getClasses(orgId: string, userId: string, isAdmin: boolean
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("classes")
-    .select("id, name, class_teachers(teacher_user_id, profiles(display_name)), class_enrollments(status)")
+    .select(
+      "id, name, meeting_days, class_teachers(teacher_user_id, profiles(display_name)), class_enrollments(status)",
+    )
     .eq("organization_id", orgId)
     .eq("status", "active")
     .order("name");
@@ -99,6 +101,7 @@ export async function getClasses(orgId: string, userId: string, isAdmin: boolean
     .map((c) => ({
       id: c.id,
       name: c.name,
+      meetingDays: c.meeting_days,
       studentCount: c.class_enrollments.filter((e) => e.status === "active").length,
       teachers: c.class_teachers
         .map((t) => ({ id: t.teacher_user_id, name: t.profiles?.display_name ?? "" }))
@@ -113,7 +116,7 @@ export async function getClassWithRoster(orgId: string, classId: string, userId:
   const [cls, roster] = await Promise.all([
     supabase
       .from("classes")
-      .select("id, name, class_teachers(teacher_user_id)")
+      .select("id, name, meeting_days, class_teachers(teacher_user_id)")
       .eq("id", classId)
       .eq("organization_id", orgId)
       .maybeSingle(),
@@ -483,4 +486,36 @@ export async function getStudentClassId(studentId: string) {
   return (
     data.sort((a, b) => (a.classes?.name ?? "").localeCompare(b.classes?.name ?? ""))[0]?.class_id ?? null
   );
+}
+
+export type NewsPost = {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  authorName: string;
+};
+
+/** Latest news of the given organizations, newest first (RLS: staff and parents). */
+export async function getNews(orgIds: string[], limit = 10): Promise<NewsPost[]> {
+  if (orgIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_news")
+    .select("id, organization_id, title, body, created_at, profiles(display_name), organizations(name)")
+    .in("organization_id", orgIds)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.map((n) => ({
+    id: n.id,
+    organizationId: n.organization_id,
+    organizationName: n.organizations?.name ?? "",
+    title: n.title,
+    body: n.body,
+    createdAt: n.created_at,
+    authorName: n.profiles?.display_name ?? "",
+  }));
 }

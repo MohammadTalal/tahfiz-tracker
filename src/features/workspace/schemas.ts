@@ -23,6 +23,11 @@ export const accountSchema = z.object({
     .regex(/^(\+[0-9][0-9 ()-]{5,23})?$/, { error: "invalid_phone" }),
 });
 
+export const newsSchema = z.object({
+  title: z.string().trim().min(1, { error: "required" }).max(120, { error: "tooLong" }),
+  body: z.string().trim().max(2000, { error: "tooLong" }).default(""),
+});
+
 export const RATINGS = ["excellent", "very_good", "good", "needs_improvement", "not_completed"] as const;
 export const MISTAKES = ["forgotten_words", "sequence", "pronunciation", "tajweed", "hesitation"] as const;
 

@@ -123,14 +123,14 @@ isOneToOne: false
                   ]
                 },"classes": {
                   Row: {
-                    "created_at": string,"description": string | null,"id": string,"name": string,"organization_id": string,"status": Database["public"]['Enums']["record_status"],"updated_at": string
+                    "created_at": string,"description": string | null,"id": string,"meeting_days": (number)[],"name": string,"organization_id": string,"status": Database["public"]['Enums']["record_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"description"?: string | null,"id"?: string,"name": string,"organization_id": string,"status"?: Database["public"]['Enums']["record_status"],"updated_at"?: string
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"meeting_days"?: (number)[],"name": string,"organization_id": string,"status"?: Database["public"]['Enums']["record_status"],"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"description"?: string | null,"id"?: string,"name"?: string,"organization_id"?: string,"status"?: Database["public"]['Enums']["record_status"],"updated_at"?: string
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"meeting_days"?: (number)[],"name"?: string,"organization_id"?: string,"status"?: Database["public"]['Enums']["record_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -304,6 +304,32 @@ isOneToOne: false
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"organization_news": {
+                  Row: {
+                    "author_id": string,"body": string,"created_at": string,"id": string,"organization_id": string,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id": string,"body"?: string,"created_at"?: string,"id"?: string,"organization_id": string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"organization_id"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "organization_news_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "organization_news_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
       referencedColumns: ["id"]
     }
                   ]

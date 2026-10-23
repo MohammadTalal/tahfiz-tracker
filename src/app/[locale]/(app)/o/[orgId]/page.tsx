@@ -1,5 +1,6 @@
 import {
   BookOpenCheck,
+  CalendarDays,
   CalendarClock,
   ChevronLeft,
   CircleCheck,
@@ -17,12 +18,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { InitialAvatar } from "@/components/layout/avatar";
 import { StatStrip } from "@/components/layout/stat-strip";
 import { Badge } from "@/components/ui/badge";
-import { ActivityChart } from "@/features/workspace/components/activity-chart";
-import { DateLabel, PassageLabel, RatingBadge, Section } from "@/features/workspace/components/display";
+import { Section } from "@/features/workspace/components/display";
+import { NewsFeed } from "@/features/workspace/components/news";
 import {
   getClasses,
   getOrganizationForStaff,
   getProfileName,
+  getNews,
   getRecentLessons,
   getStudentDirectory,
   getTeachers,
@@ -35,6 +37,7 @@ import { isId } from "@/lib/ids";
 import { pagesInPassages } from "@/lib/quran/divisions";
 import { passageFromRow } from "@/lib/quran/format";
 import type { Passage } from "@/lib/quran/passage";
+import { dayName, weekdayOf } from "@/lib/weekdays";
 
 const STALE_AFTER_DAYS = 7;
 const WEAK_RATINGS = new Set(["needs_improvement", "not_completed"]);
@@ -52,26 +55,25 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
   const weekStart = addDays(today, -6);
   const twoWeeksStart = addDays(today, -13);
   const monthStart = `${today.slice(0, 8)}01`;
-  const [name, classes, students, lessons, teachers] = await Promise.all([
+  const [name, classes, students, lessons, teachers, news] = await Promise.all([
     getProfileName(user.id),
     getClasses(orgId, user.id, org.isAdmin),
     getStudentDirectory(orgId),
     getRecentLessons(orgId, monthStart < twoWeeksStart ? monthStart : twoWeeksStart),
     org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
+    getNews([orgId]),
   ]);
   const t = await getTranslations("OrgDashboard");
   const number = (n: number) => n.toLocaleString(locale === "ar" ? "ar-u-nu-arab" : "en");
 
-  // Lessons per day for the last 14 days.
+  // This week against last week.
   const recent = lessons.filter((l) => l.lesson_date >= twoWeeksStart);
-  const perDay = new Map<string, number>();
-  for (const l of recent) perDay.set(l.lesson_date, (perDay.get(l.lesson_date) ?? 0) + 1);
-  const days = Array.from({ length: 14 }, (_, i) => {
-    const date = addDays(today, i - 13);
-    return { date, count: perDay.get(date) ?? 0 };
-  });
   const weekLessons = recent.filter((l) => l.lesson_date >= weekStart);
   const lastWeekCount = recent.length - weekLessons.length;
+
+  // Classes that meet today, in the organization's time zone.
+  const todayWeekday = weekdayOf(today);
+  const todaysClasses = classes.filter((c) => c.meetingDays.includes(todayWeekday));
 
   // Stars of the month: most Mushaf pages memorized since the 1st of this
   // month. Lessons rated "not completed" do not count, and a passage recited
@@ -218,11 +220,7 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
-          <Section title={t("activityTitle")}>
-            <div className="bg-card rounded-xl border p-4 shadow-(--shadow-soft)">
-              <ActivityChart days={days} />
-            </div>
-          </Section>
+          <NewsFeed posts={news} postTo={org.isAdmin ? orgId : undefined} />
 
           <Section title={t("attentionTitle")}>
             {attention.length === 0 ? (
@@ -260,38 +258,50 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
               </ul>
             )}
           </Section>
-
-          <Section title={t("recentTitle")}>
-            {recent.length === 0 ? (
-              <p className="bg-card text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-                {t("recentNone")}
-              </p>
-            ) : (
-              <ol className="bg-card divide-y overflow-hidden rounded-xl border shadow-(--shadow-soft)">
-                {recent.slice(0, 6).map((l) => (
-                  <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                    <Link
-                      href={`/o/${orgId}/students/${l.student_id}`}
-                      className="hover:text-primary font-medium transition-colors duration-150"
-                    >
-                      {l.studentName}
-                    </Link>
-                    <span className="text-muted-foreground text-sm">
-                      <PassageLabel row={l} />
-                    </span>
-                    <RatingBadge rating={l.performance_rating} />
-                    <span className="text-subtle-foreground ms-auto text-xs">
-                      {l.teacherName && `${l.teacherName} — `}
-                      <DateLabel date={l.lesson_date} />
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Section>
         </div>
 
         <aside className="flex flex-col gap-4">
+          <div className="bg-card flex flex-col gap-3 rounded-xl border p-4 shadow-(--shadow-soft)">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <CalendarDays className="text-primary size-5" aria-hidden />
+              {t("todayTitle")}
+              <span className="text-muted-foreground ms-auto text-xs font-normal">
+                {dayName(todayWeekday, locale)}
+              </span>
+            </h2>
+            {todaysClasses.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                {classes.some((c) => c.meetingDays.length > 0) ? t("todayNone") : t("todayNoDays")}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {todaysClasses.map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      href={`/o/${orgId}/classes/${c.id}`}
+                      className="hover:bg-surface-tint -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors duration-150"
+                    >
+                      <span className="bg-mint text-primary grid size-8 shrink-0 place-items-center rounded-lg">
+                        <GraduationCap className="size-4" aria-hidden />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span dir="auto" className="truncate font-medium">
+                          {c.name}
+                        </span>
+                        {c.teachers.length > 0 && (
+                          <span className="text-muted-foreground truncate text-xs">
+                            {c.teachers.map((x) => x.name).join("، ")}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-muted-foreground text-xs">{number(c.studentCount)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="bg-card flex flex-col gap-3 rounded-xl border p-4 shadow-(--shadow-soft)">
             <h2 className="flex items-center gap-2 font-semibold">
               <Star className="text-gold fill-gold size-5" aria-hidden />

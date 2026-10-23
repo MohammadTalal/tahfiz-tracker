@@ -7,7 +7,13 @@ import { type ActionState, errorState, formObject, invalidState } from "@/lib/ac
 import { getCurrentUser } from "@/lib/auth/session";
 import { idSchema } from "@/lib/ids";
 import { createClient } from "@/lib/supabase/server";
-import { accountSchema, createOrganizationSchema, nameSchema, recordLessonSchema } from "./schemas";
+import {
+  accountSchema,
+  createOrganizationSchema,
+  nameSchema,
+  newsSchema,
+  recordLessonSchema,
+} from "./schemas";
 
 // Every action re-checks the session. Permissions are enforced by RLS and the
 // database functions; a "not allowed" result just maps their error.
@@ -326,4 +332,54 @@ export async function recordLesson(input: unknown): Promise<RecordLessonResult> 
   if (error || !data)
     return { ok: false, error: error?.code === PERMISSION_DENIED ? "not_allowed" : "generic" };
   return { ok: true, recordId: data };
+}
+
+/** Sets the weekdays a class meets (0 = Sunday … 6 = Saturday). Admins; enforced by RLS. */
+export async function setClassDays(classId: string, days: number[]): Promise<{ error: string } | undefined> {
+  const valid = days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+  if (!idSchema.safeParse(classId).success || !valid) return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { data, error } = await ctx.supabase
+    .from("classes")
+    .update({ meeting_days: [...new Set(days)].sort((a, b) => a - b) })
+    .eq("id", classId)
+    .select("id");
+  if (error) return { error: "generic" };
+  if (data.length === 0) return { error: "not_allowed" };
+
+  refresh();
+}
+
+/** Posts a news item to the organization (admins; enforced by RLS). */
+export async function postNews(orgId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = newsSchema.safeParse(formObject(formData));
+  if (!parsed.success) return invalidState(parsed.error);
+  if (!idSchema.safeParse(orgId).success) return errorState("not_allowed");
+  const ctx = await signedInClient();
+  if (!ctx) return errorState("not_allowed");
+
+  const { error } = await ctx.supabase.from("organization_news").insert({
+    organization_id: orgId,
+    author_id: ctx.user.id,
+    title: parsed.data.title,
+    body: parsed.data.body,
+  });
+  if (error) return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
+
+  refresh();
+  return { status: "success" };
+}
+
+export async function deleteNews(newsId: string): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(newsId).success) return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { data, error } = await ctx.supabase.from("organization_news").delete().eq("id", newsId).select("id");
+  if (error) return { error: "generic" };
+  if (data.length === 0) return { error: "not_allowed" };
+
+  refresh();
 }

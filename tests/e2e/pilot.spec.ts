@@ -278,8 +278,10 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
 
   // Dashboard: greeting, this week's activity and the latest lessons.
   await expect(page.getByRole("heading", { level: 1, name: "Imam Khalid" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "النشاط في آخر أسبوعين" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "أحدث الدروس" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "أخبار الجهة" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /حلقات اليوم/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "النشاط في آخر أسبوعين" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "أحدث الدروس" })).toHaveCount(0);
   // Stars of the month: ranked by Mushaf pages (the seed's lesson today is Al-Mulk 6–10).
   const stars = page.getByRole("heading", { name: /نجوم الشهر/ }).locator("..");
   await expect(stars.getByRole("link", { name: /أحمد/ })).toContainText("صفحة");
@@ -355,6 +357,59 @@ test("an admin adds a student from the Students tab", async ({ page }) => {
   await expect(page.getByText("يوجد طالب بهذا الاسم")).toBeVisible();
   await page.getByRole("button", { name: "إضافة", exact: true }).click();
   await expect(page.getByRole("link", { name: startsWith(name) })).toHaveCount(2);
+});
+
+test("an admin sets class days and posts news that teachers and parents see", async ({
+  page,
+  browser,
+}, testInfo) => {
+  await page.goto("/ar/login");
+  await page.getByLabel("البريد الإلكتروني").fill("admin@demo.local");
+  await page.getByLabel("كلمة المرور").fill("password123");
+  await page.getByRole("button", { name: "دخول" }).click();
+  await expect(page).toHaveURL(/\/ar\/o\//);
+
+  // Class days: today's weekday makes the class show under "today's classes".
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/classes/d2000000-0000-0000-0000-000000000001");
+  const today = new Intl.DateTimeFormat("ar", { weekday: "long" }).format(new Date());
+  const dayButton = page.getByRole("group", { name: "أيام الحلقة" }).getByRole("button", { name: today });
+  if ((await dayButton.getAttribute("aria-pressed")) !== "true") await dayButton.click();
+  await expect(dayButton).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001");
+  const todayBox = page.getByRole("heading", { name: /حلقات اليوم/ }).locator("..");
+  await expect(todayBox.getByRole("link", { name: /حلقة أ/ })).toBeVisible();
+
+  // News: posted by the admin.
+  const title = `إعلان ${testInfo.project.name} ${Date.now()}`;
+  await page.getByRole("button", { name: "نشر خبر" }).click();
+  await page.getByLabel("العنوان").fill(title);
+  await page.getByLabel("التفاصيل (اختياري)").fill("لا دروس يوم الجمعة القادم.");
+  await page.getByRole("button", { name: "نشر", exact: true }).click();
+  await expect(page.getByText(title)).toBeVisible();
+
+  // A teacher reads it but cannot post.
+  const teacher = await (await browser.newContext({ locale: "ar-SA" })).newPage();
+  await teacher.goto("/ar/login");
+  await teacher.getByLabel("البريد الإلكتروني").fill("teacher@demo.local");
+  await teacher.getByLabel("كلمة المرور").fill("password123");
+  await teacher.getByRole("button", { name: "دخول" }).click();
+  await expect(teacher.getByText(title)).toBeVisible();
+  await expect(teacher.getByRole("button", { name: "نشر خبر" })).toHaveCount(0);
+  await teacher.context().close();
+
+  // A parent sees it on their home page.
+  const parent = await (await browser.newContext({ locale: "ar-SA" })).newPage();
+  await parent.goto("/ar/login");
+  await parent.getByLabel("البريد الإلكتروني").fill("parent@demo.local");
+  await parent.getByLabel("كلمة المرور").fill("password123");
+  await parent.getByRole("button", { name: "دخول" }).click();
+  await expect(parent.getByText(title)).toBeVisible();
+  await parent.context().close();
+
+  // The admin deletes it.
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: `حذف «${title}»` }).click();
+  await expect(page.getByText(title)).toHaveCount(0);
 });
 
 test("an admin archives a student without a class", async ({ page }) => {
