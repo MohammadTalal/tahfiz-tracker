@@ -74,8 +74,8 @@ export default async function RecordLessonPage({
               ? t("positionInClass", { className: cls.name, n: fmt(position + 1), total: fmt(roster.length) })
               : t("heading")}
           </p>
-          <h1 dir="auto" className="truncate text-lg leading-tight font-bold">
-            {student.display_name}
+          <h1 className="truncate text-lg leading-tight font-bold">
+            <bdi>{student.display_name}</bdi>
           </h1>
         </div>
       </div>

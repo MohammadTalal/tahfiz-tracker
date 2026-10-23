@@ -17,11 +17,18 @@ import { addStudent } from "../actions";
  * "Add student" on the Students page (admins): name and class in one small
  * form. A name that already exists asks for a second press, as on class pages.
  */
-export function AddStudentPanel({ classes }: { classes: { id: string; name: string }[] }) {
+export function AddStudentPanel({
+  classes,
+  initialOpen = false,
+}: {
+  classes: { id: string; name: string }[];
+  /** Start open (the "Add student" shortcut). */
+  initialOpen?: boolean;
+}) {
   const t = useTranslations("Students");
   const tc = useTranslations("Class");
   const te = useTranslations("Errors");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [state, formAction] = useActionState(addStudent, idleState);
   const [submitted, setSubmitted] = useState({ name: "", classId: "" });
   const formRef = useRef<HTMLFormElement>(null);

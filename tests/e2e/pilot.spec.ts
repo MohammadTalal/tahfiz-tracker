@@ -32,8 +32,8 @@ test("teacher records a lesson and a parent follows progress", async ({ page, br
     await page.getByLabel("الاسم", { exact: true }).fill("حلقة الاختبار");
     await expect(page.getByLabel("أنا أيضًا أدرّس الطلاب هنا")).toBeChecked();
     await page.getByRole("button", { name: "إنشاء" }).click();
-    // Lands on the organization's dashboard, greeted by name.
-    await expect(page.getByRole("heading", { level: 1, name: "الأستاذ سعيد" })).toBeVisible();
+    // Lands on the organization's dashboard, with its shortcuts.
+    await expect(page.getByRole("navigation", { name: "اختصارات" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "حلقة الاختبار" })).toBeVisible();
   });
 
@@ -277,7 +277,13 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
   const nav = page.getByRole("navigation", { name: "مسجد النور" });
 
   // Dashboard: greeting, this week's activity and the latest lessons.
-  await expect(page.getByRole("heading", { level: 1, name: "Imam Khalid" })).toBeVisible();
+  const shortcuts = page.getByRole("navigation", { name: "اختصارات" });
+  await expect(shortcuts.getByRole("link", { name: "تسجيل درس" })).toBeVisible();
+  await expect(shortcuts.getByRole("link", { name: "نشر خبر" })).toBeVisible();
+  // "Add a student" opens the form on the Students tab.
+  await shortcuts.getByRole("link", { name: "إضافة طالب" }).click();
+  await expect(page.getByLabel("اسم الطالب")).toBeVisible();
+  await page.goBack();
   await expect(page.getByRole("heading", { name: "أخبار الجهة" })).toBeVisible();
   await expect(page.getByText(/صفحات حُفظت في/)).toBeVisible();
   await expect(page.getByRole("heading", { name: /حلقات اليوم/ })).toBeVisible();

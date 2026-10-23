@@ -1,4 +1,7 @@
 import {
+  Megaphone,
+  PenLine,
+  UserPlus,
   BookOpenCheck,
   CalendarDays,
   CalendarClock,
@@ -23,7 +26,6 @@ import { NewsFeed } from "@/features/workspace/components/news";
 import {
   getClasses,
   getOrganizationForStaff,
-  getProfileName,
   getNews,
   getRecentLessons,
   getStudentDirectory,
@@ -32,9 +34,9 @@ import {
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireUser } from "@/lib/auth/session";
-import { addDays, daysBetween, todayIn } from "@/lib/dates";
+import { daysBetween, todayIn } from "@/lib/dates";
 import { isId } from "@/lib/ids";
-import { toneClasses } from "@/lib/tones";
+import { toneAt, toneClasses } from "@/lib/tones";
 import { pagesInPassages } from "@/lib/quran/divisions";
 import { passageFromRow } from "@/lib/quran/format";
 import type { Passage } from "@/lib/quran/passage";
@@ -44,8 +46,9 @@ const STALE_AFTER_DAYS = 7;
 const WEAK_RATINGS = new Set(["needs_improvement", "not_completed"]);
 
 /** The organization's home for admins and teachers: today, this week, and what needs attention. */
-export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[orgId]">) {
+export default async function DashboardPage({ params, searchParams }: PageProps<"/[locale]/o/[orgId]">) {
   const { locale, orgId } = await params;
+  const openNewsForm = (await searchParams).news === "1";
   setRequestLocale(locale as Locale);
   if (!isId(orgId)) notFound();
   const user = await requireUser();
@@ -53,21 +56,16 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
   if (!org) notFound();
 
   const today = todayIn(org.timezone);
-  const weekStart = addDays(today, -6);
   const monthStart = `${today.slice(0, 8)}01`;
-  const [name, classes, students, lessons, teachers, news] = await Promise.all([
-    getProfileName(user.id),
+  const [classes, students, lessons, teachers, news] = await Promise.all([
     getClasses(orgId, user.id, org.isAdmin),
     getStudentDirectory(orgId),
-    getRecentLessons(orgId, monthStart < weekStart ? monthStart : weekStart),
+    getRecentLessons(orgId, monthStart),
     org.isAdmin ? getTeachers(orgId) : Promise.resolve([]),
     getNews([orgId]),
   ]);
   const t = await getTranslations("OrgDashboard");
   const number = (n: number) => n.toLocaleString(locale === "ar" ? "ar-u-nu-arab" : "en");
-
-  // Lessons in the last 7 days, for the greeting.
-  const weekLessons = lessons.filter((l) => l.lesson_date >= weekStart);
 
   // Classes that meet today, in the organization's time zone.
   const todayWeekday = weekdayOf(today);
@@ -148,45 +146,46 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
       });
   }
 
-  const now = new Date();
-  const numbering = locale === "ar" ? "arab" : "latn";
-  const gregorian = new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: org.timezone,
-    numberingSystem: numbering,
-  }).format(now);
-  const hijri = new Intl.DateTimeFormat(`${locale}-u-ca-islamic-umalqura`, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: org.timezone,
-    numberingSystem: numbering,
-  }).format(now);
-
   return (
     <>
-      {/* Greeting */}
-      <section className="bg-primary text-primary-foreground relative overflow-hidden rounded-2xl p-6 shadow-(--shadow-soft) sm:p-8">
-        <StarPattern />
-        <div className="relative flex flex-col gap-1">
-          <p className="text-primary-foreground/80 text-sm">{t("greeting")}</p>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{name || org.name}</h1>
-          <p className="text-primary-foreground/85 mt-2 text-sm">
-            {gregorian} — <span className="font-medium">{hijri}</span>
-          </p>
-          <p className="text-primary-foreground/85 mt-3 max-w-xl text-sm">
-            {weekLessons.length === 0
-              ? t("weekNone")
-              : t("weekSummary", {
-                  lessons: weekLessons.length,
-                  students: new Set(weekLessons.map((l) => l.student_id)).size,
-                })}
-          </p>
-        </div>
-      </section>
+      <h1 className="sr-only">{org.name}</h1>
+
+      {/* Quick actions: the things people come here to do. */}
+      <nav aria-label={t("quickActions")} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <QuickAction
+          href={
+            todaysClasses.length === 1
+              ? `/o/${orgId}/classes/${todaysClasses[0]!.id}`
+              : `/o/${orgId}/students`
+          }
+          icon={PenLine}
+          label={t("actionRecord")}
+          tone={toneAt(0)}
+        />
+        {org.isAdmin ? (
+          <>
+            <QuickAction
+              href={`/o/${orgId}/students?add=1`}
+              icon={UserPlus}
+              label={t("actionAddStudent")}
+              tone={toneAt(1)}
+            />
+            <QuickAction
+              href={`/o/${orgId}?news=1#news`}
+              icon={Megaphone}
+              label={t("actionPostNews")}
+              tone={toneAt(2)}
+            />
+          </>
+        ) : (
+          <QuickAction
+            href={`/o/${orgId}/classes`}
+            icon={GraduationCap}
+            label={t("actionMyClasses")}
+            tone={toneAt(1)}
+          />
+        )}
+      </nav>
 
       <StatStrip
         stats={[
@@ -213,7 +212,7 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
-          <NewsFeed posts={news} postTo={org.isAdmin ? orgId : undefined} />
+          <NewsFeed posts={news} postTo={org.isAdmin ? orgId : undefined} openForm={openNewsForm} />
 
           <Section title={t("attentionTitle")}>
             {attention.length === 0 ? (
@@ -280,8 +279,8 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                         <GraduationCap className="size-4" aria-hidden />
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span dir="auto" className="truncate font-medium">
-                          {c.name}
+                        <span className="truncate font-medium">
+                          <bdi>{c.name}</bdi>
                         </span>
                         {c.teachers.length > 0 && (
                           <span className="text-muted-foreground truncate text-xs">
@@ -371,8 +370,8 @@ export default async function DashboardPage({ params }: PageProps<"/[locale]/o/[
                       >
                         <GraduationCap className="size-4" aria-hidden />
                       </span>
-                      <span dir="auto" className="flex-1 truncate font-medium">
-                        {c.name}
+                      <span className="flex-1 truncate font-medium">
+                        <bdi>{c.name}</bdi>
                       </span>
                       <span className="text-muted-foreground text-xs">{number(c.studentCount)}</span>
                     </Link>
@@ -396,15 +395,27 @@ function AllGood({ text }: { text: string }) {
   );
 }
 
-/** Faint eight-point stars, echoing the brand mark. Decorative only. */
-function StarPattern() {
+/** A big, coloured shortcut tile. */
+function QuickAction({
+  href,
+  icon: Icon,
+  label,
+  tone,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  tone: string;
+}) {
   return (
-    <svg className="absolute -end-10 -top-10 size-64 opacity-10" viewBox="0 0 100 100" aria-hidden>
-      <g fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="25" y="25" width="50" height="50" />
-        <rect x="25" y="25" width="50" height="50" transform="rotate(45 50 50)" />
-        <circle cx="50" cy="50" r="12" />
-      </g>
-    </svg>
+    <Link
+      href={href}
+      className="bg-card hover:border-primary/40 flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center font-semibold shadow-(--shadow-soft) transition-colors duration-150 last:odd:col-span-2 sm:last:odd:col-span-1"
+    >
+      <span className={`grid size-11 place-items-center rounded-full ${tone}`} aria-hidden>
+        <Icon className="size-5" />
+      </span>
+      {label}
+    </Link>
   );
 }

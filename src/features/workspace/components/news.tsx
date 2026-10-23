@@ -22,17 +22,23 @@ export function NewsFeed({
   posts,
   postTo,
   showOrganization = false,
+  openForm = false,
 }: {
   posts: NewsPost[];
   /** Organization id to post to; only for admins. */
   postTo?: string;
   showOrganization?: boolean;
+  /** Start with the post form open (the "Post news" shortcut). */
+  openForm?: boolean;
 }) {
   const t = useTranslations("News");
   const format = useFormatter();
   const locale = useLocale();
   return (
-    <section className="bg-card flex flex-col gap-3 rounded-xl border p-4 shadow-(--shadow-soft)">
+    <section
+      id="news"
+      className="bg-card flex scroll-mt-20 flex-col gap-3 rounded-xl border p-4 shadow-(--shadow-soft)"
+    >
       <h2 className="flex items-center gap-2 font-semibold">
         <span
           className="bg-gold-soft text-gold-foreground grid size-7 place-items-center rounded-md"
@@ -43,7 +49,7 @@ export function NewsFeed({
         {t("title")}
       </h2>
 
-      {postTo && <NewsForm orgId={postTo} />}
+      {postTo && <NewsForm orgId={postTo} initialOpen={openForm} />}
 
       {posts.length === 0 ? (
         <p className="text-muted-foreground text-sm">{postTo ? t("emptyAdmin") : t("empty")}</p>
@@ -52,8 +58,8 @@ export function NewsFeed({
           {posts.map((post) => (
             <li key={post.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
               <div className="min-w-0 flex-1">
-                <p dir="auto" className="font-semibold">
-                  {post.title}
+                <p className="font-semibold">
+                  <bdi>{post.title}</bdi>
                 </p>
                 {post.body && (
                   <p dir="auto" className="text-foreground/90 mt-1 text-sm whitespace-pre-line">
@@ -88,10 +94,10 @@ export function NewsFeed({
   );
 }
 
-function NewsForm({ orgId }: { orgId: string }) {
+function NewsForm({ orgId, initialOpen }: { orgId: string; initialOpen: boolean }) {
   const t = useTranslations("News");
   const te = useTranslations("Errors");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   // Controlled, so a failed post keeps what was written.
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");

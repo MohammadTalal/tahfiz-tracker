@@ -58,8 +58,8 @@ export default async function ClassesPage({ params }: PageProps<"/[locale]/o/[or
                     <GraduationCap className="size-5" />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span dir="auto" className="truncate font-semibold">
-                      {c.name}
+                    <span className="truncate font-semibold">
+                      <bdi>{c.name}</bdi>
                     </span>
                     <span className="text-muted-foreground text-sm">
                       {to("students", { count: c.studentCount })}

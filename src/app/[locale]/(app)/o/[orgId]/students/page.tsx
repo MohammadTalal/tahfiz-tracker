@@ -25,8 +25,12 @@ import { toneClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
 /** Every student the user may see, with class, teachers, parents and phone numbers. */
-export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[orgId]/students">) {
+export default async function StudentsPage({
+  params,
+  searchParams,
+}: PageProps<"/[locale]/o/[orgId]/students">) {
   const { locale, orgId } = await params;
+  const openAdd = (await searchParams).add === "1";
   setRequestLocale(locale as Locale);
   if (!isId(orgId)) notFound();
   const user = await requireUser();
@@ -75,7 +79,7 @@ export default async function StudentsPage({ params }: PageProps<"/[locale]/o/[o
       />
       {org.isAdmin && (
         <div className="flex">
-          <AddStudentPanel classes={classes.map((c) => ({ id: c.id, name: c.name }))} />
+          <AddStudentPanel classes={classes.map((c) => ({ id: c.id, name: c.name }))} initialOpen={openAdd} />
         </div>
       )}
       {students.length === 0 ? (
@@ -156,7 +160,9 @@ async function StudentRow({
               className={`flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 font-medium transition-opacity duration-150 hover:opacity-80 ${toneClasses(c.id)}`}
             >
               <GraduationCap className="size-4" aria-hidden />
-              <span dir="auto">{c.name}</span>
+              <span>
+                <bdi>{c.name}</bdi>
+              </span>
             </Link>
           ))
         )}

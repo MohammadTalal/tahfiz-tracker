@@ -372,9 +372,6 @@
     "saved": "Saved"
   },
   "OrgDashboard": {
-    "greeting": "Assalamu alaikum",
-    "weekNone": "No lessons recorded this week yet. Have a blessed start!",
-    "weekSummary": "This week: {lessons, plural, one {# lesson} other {# lessons}} with {students, plural, one {# student} other {# students}}. May Allah bless the effort.",
     "statStudents": "Students",
     "statMyStudents": "My students",
     "statClasses": "Classes",
@@ -401,7 +398,12 @@
     "todayTitle": "Today's classes",
     "todayNone": "No classes today.",
     "todayNoDays": "Set each class's days on its page to see them here.",
-    "statMonthPages": "Pages memorized in {month}"
+    "statMonthPages": "Pages memorized in {month}",
+    "quickActions": "Shortcuts",
+    "actionRecord": "Record a lesson",
+    "actionAddStudent": "Add a student",
+    "actionPostNews": "Post news",
+    "actionMyClasses": "My classes"
   },
   "Juz": {
     "label": "Juz {juz}"

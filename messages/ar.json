@@ -372,9 +372,6 @@
     "saved": "تم الحفظ"
   },
   "OrgDashboard": {
-    "greeting": "السلام عليكم ورحمة الله",
-    "weekNone": "لم تُسجَّل دروس هذا الأسبوع بعد. بداية موفقة!",
-    "weekSummary": "هذا الأسبوع: {lessons, plural, one {درس واحد} two {درسان} few {# دروس} many {# درسًا} other {# درس}} مع {students, plural, one {طالب واحد} two {طالبين} few {# طلاب} many {# طالبًا} other {# طالب}}. بارك الله في الجهود.",
     "statStudents": "الطلاب",
     "statMyStudents": "طلابي",
     "statClasses": "الحلقات",
@@ -401,7 +398,12 @@
     "todayTitle": "حلقات اليوم",
     "todayNone": "لا حلقات اليوم.",
     "todayNoDays": "حدّد أيام كل حلقة من صفحتها لتظهر هنا.",
-    "statMonthPages": "صفحات حُفظت في {month}"
+    "statMonthPages": "صفحات حُفظت في {month}",
+    "quickActions": "اختصارات",
+    "actionRecord": "تسجيل درس",
+    "actionAddStudent": "إضافة طالب",
+    "actionPostNews": "نشر خبر",
+    "actionMyClasses": "حلقاتي"
   },
   "Juz": {
     "label": "الجزء {juz}"

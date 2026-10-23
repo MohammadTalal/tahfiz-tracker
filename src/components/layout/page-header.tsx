@@ -34,8 +34,8 @@ export function PageHeader({
         <div className="flex min-w-0 items-center gap-3">
           {leading}
           <div className="min-w-0">
-            <h1 dir="auto" className="truncate text-2xl font-bold tracking-tight sm:text-[1.75rem]">
-              {title}
+            <h1 className="truncate text-2xl font-bold tracking-tight sm:text-[1.75rem]">
+              <bdi>{title}</bdi>
             </h1>
             {description && <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>}
           </div>

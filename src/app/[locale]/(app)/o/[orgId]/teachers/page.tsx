@@ -70,8 +70,8 @@ export default async function TeachersPage({ params }: PageProps<"/[locale]/o/[o
                     <div className="flex flex-wrap items-center gap-3">
                       <InitialAvatar name={teacher.name} />
                       <div className="flex min-w-0 flex-1 flex-col">
-                        <span dir="auto" className="truncate font-semibold">
-                          {teacher.name}
+                        <span className="truncate font-semibold">
+                          <bdi>{teacher.name}</bdi>
                         </span>
                         {teacher.phone ? (
                           <PhoneLink phone={teacher.phone} name={teacher.name} />
@@ -107,8 +107,8 @@ export default async function TeachersPage({ params }: PageProps<"/[locale]/o/[o
                             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-opacity duration-150 hover:opacity-80 ${toneClasses(c.id)}`}
                           >
                             <GraduationCap className="size-4" aria-hidden />
-                            <span dir="auto" className="font-medium">
-                              {c.name}
+                            <span className="font-medium">
+                              <bdi>{c.name}</bdi>
                             </span>
                             <span className="text-xs opacity-80">
                               {to("students", { count: c.studentCount })}
