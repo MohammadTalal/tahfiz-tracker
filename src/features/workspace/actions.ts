@@ -383,3 +383,117 @@ export async function deleteNews(newsId: string): Promise<{ error: string } | un
 
   refresh();
 }
+
+/** Puts a teacher in a class (admins; enforced by RLS). */
+export async function assignClassToTeacher(
+  teacherId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  return assignTeacher(String(formData.get("classId") ?? ""), _prev, toTeacherForm(teacherId));
+}
+
+function toTeacherForm(teacherId: string) {
+  const form = new FormData();
+  form.set("teacherId", teacherId);
+  return form;
+}
+
+/** Assigns one student directly to a teacher, outside any class (admins; RLS). */
+export async function assignStudentToTeacher(
+  teacherId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const studentId = formData.get("studentId");
+  if (!idSchema.safeParse(teacherId).success || !idSchema.safeParse(studentId).success) {
+    return errorState("required");
+  }
+  const ctx = await signedInClient();
+  if (!ctx) return errorState("not_allowed");
+
+  const { data: student } = await ctx.supabase
+    .from("students")
+    .select("organization_id")
+    .eq("id", studentId as string)
+    .maybeSingle();
+  if (!student) return errorState("not_allowed");
+
+  const { error } = await ctx.supabase.from("teacher_student_assignments").insert({
+    organization_id: student.organization_id,
+    teacher_user_id: teacherId,
+    student_id: studentId as string,
+  });
+  if (error) return errorState(error.code === PERMISSION_DENIED ? "not_allowed" : "generic");
+
+  refresh();
+  return { status: "success" };
+}
+
+/** Ends a teacher's direct assignment to a student. */
+export async function unassignStudentFromTeacher(
+  teacherId: string,
+  studentId: string,
+): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(teacherId).success || !idSchema.safeParse(studentId).success)
+    return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { data, error } = await ctx.supabase
+    .from("teacher_student_assignments")
+    .update({ status: "ended", end_date: new Date().toISOString().slice(0, 10) })
+    .eq("teacher_user_id", teacherId)
+    .eq("student_id", studentId)
+    .eq("status", "active")
+    .select("id");
+  if (error) return { error: "generic" };
+  if (data.length === 0) return { error: "not_allowed" };
+
+  refresh();
+}
+
+const MEMBER_ERRORS: Record<string, string> = {
+  cannot_change_self: "cannot_change_self",
+  last_admin: "last_admin",
+};
+
+/** Makes a member an admin, or takes admin away (not from yourself; one admin stays). */
+export async function setMemberAdmin(
+  orgId: string,
+  userId: string,
+  admin: boolean,
+): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(orgId).success || !idSchema.safeParse(userId).success)
+    return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { error } = await ctx.supabase.rpc("set_member_admin", {
+    p_organization_id: orgId,
+    p_user_id: userId,
+    p_admin: admin,
+  });
+  if (error)
+    return {
+      error: MEMBER_ERRORS[error.message] ?? (error.code === PERMISSION_DENIED ? "not_allowed" : "generic"),
+    };
+
+  refresh();
+}
+
+/** Removes a member from the organization; they lose all access to it. */
+export async function removeMember(orgId: string, userId: string): Promise<{ error: string } | undefined> {
+  if (!idSchema.safeParse(orgId).success || !idSchema.safeParse(userId).success)
+    return { error: "not_allowed" };
+  const ctx = await signedInClient();
+  if (!ctx) return { error: "not_allowed" };
+
+  const { error } = await ctx.supabase.rpc("remove_member", { p_organization_id: orgId, p_user_id: userId });
+  if (error)
+    return {
+      error: MEMBER_ERRORS[error.message] ?? (error.code === PERMISSION_DENIED ? "not_allowed" : "generic"),
+    };
+
+  return redirect({ href: `/o/${orgId}/teachers`, locale: await getLocale() });
+}

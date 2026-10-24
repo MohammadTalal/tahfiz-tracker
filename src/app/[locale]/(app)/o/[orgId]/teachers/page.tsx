@@ -1,4 +1,4 @@
-import { BookOpenCheck, GraduationCap, Network, UserCheck, Users } from "lucide-react";
+import { BookOpenCheck, ChevronLeft, GraduationCap, Network, UserCheck, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { InitialAvatar } from "@/components/layout/avatar";
@@ -19,8 +19,13 @@ import { toneClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
 /** Admin view of the teachers: their classes, students, contact and this week's lessons. */
-export default async function TeachersPage({ params }: PageProps<"/[locale]/o/[orgId]/teachers">) {
+export default async function TeachersPage({
+  params,
+  searchParams,
+}: PageProps<"/[locale]/o/[orgId]/teachers">) {
   const { locale, orgId } = await params;
+  // From the "Invite a teacher" shortcut: show the invite box first and highlight it.
+  const inviting = (await searchParams).invite === "1";
   setRequestLocale(locale as Locale);
   if (!isId(orgId)) notFound();
   const user = await requireUser();
@@ -68,11 +73,26 @@ export default async function TeachersPage({ params }: PageProps<"/[locale]/o/[o
                     className="bg-card flex flex-col gap-4 rounded-xl border p-4 shadow-(--shadow-soft)"
                   >
                     <div className="flex flex-wrap items-center gap-3">
-                      <InitialAvatar name={teacher.name} />
+                      <Link
+                        href={`/o/${orgId}/teachers/${teacher.id}`}
+                        // Same target as the name link below; a bigger tap area, not a second link to announce.
+                        aria-hidden
+                        tabIndex={-1}
+                        className="shrink-0 rounded-full"
+                      >
+                        <InitialAvatar name={teacher.name} />
+                      </Link>
                       <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-semibold">
+                        <Link
+                          href={`/o/${orgId}/teachers/${teacher.id}`}
+                          className="hover:text-primary flex items-center gap-1 truncate font-semibold transition-colors duration-150"
+                        >
                           <bdi>{teacher.name}</bdi>
-                        </span>
+                          <ChevronLeft
+                            className="text-subtle-foreground size-4 shrink-0 ltr:rotate-180"
+                            aria-hidden
+                          />
+                        </Link>
                         {teacher.phone ? (
                           <PhoneLink phone={teacher.phone} name={teacher.name} />
                         ) : (
@@ -123,11 +143,16 @@ export default async function TeachersPage({ params }: PageProps<"/[locale]/o/[o
             </ul>
           )}
         </div>
-        <aside className="flex flex-col gap-4">
-          <Panel title={to("inviteTeacher")} icon={UserCheck}>
-            <p className="text-muted-foreground text-sm">{to("teachersHint")}</p>
-            <InvitePanel orgId={orgId} type="teacher" label={to("inviteTeacher")} />
-          </Panel>
+        <aside className={cn("flex flex-col gap-4", inviting && "order-first lg:order-none")}>
+          <div
+            id="invite"
+            className={cn("scroll-mt-20 rounded-xl", inviting && "ring-primary ring-2 ring-offset-2")}
+          >
+            <Panel title={to("inviteTeacher")} icon={UserCheck}>
+              <p className="text-muted-foreground text-sm">{to("teachersHint")}</p>
+              <InvitePanel orgId={orgId} type="teacher" label={to("inviteTeacher")} />
+            </Panel>
+          </div>
         </aside>
       </div>
     </>

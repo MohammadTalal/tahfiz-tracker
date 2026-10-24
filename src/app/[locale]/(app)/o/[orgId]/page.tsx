@@ -37,6 +37,7 @@ import { requireUser } from "@/lib/auth/session";
 import { daysBetween, todayIn } from "@/lib/dates";
 import { isId } from "@/lib/ids";
 import { toneAt, toneClasses } from "@/lib/tones";
+import { cn } from "@/lib/utils";
 import { pagesInPassages } from "@/lib/quran/divisions";
 import { passageFromRow } from "@/lib/quran/format";
 import type { Passage } from "@/lib/quran/passage";
@@ -151,7 +152,10 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
       <h1 className="sr-only">{org.name}</h1>
 
       {/* Quick actions: the things people come here to do. */}
-      <nav aria-label={t("quickActions")} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <nav
+        aria-label={t("quickActions")}
+        className={cn("grid grid-cols-2 gap-3", org.isAdmin ? "sm:grid-cols-4" : "sm:grid-cols-2")}
+      >
         <QuickAction
           href={
             todaysClasses.length === 1
@@ -175,6 +179,12 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
               icon={Megaphone}
               label={t("actionPostNews")}
               tone={toneAt(2)}
+            />
+            <QuickAction
+              href={`/o/${orgId}/teachers?invite=1#invite`}
+              icon={UserCheck}
+              label={t("actionInviteTeacher")}
+              tone={toneAt(4)}
             />
           </>
         ) : (

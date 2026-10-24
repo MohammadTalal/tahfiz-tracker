@@ -533,3 +533,53 @@ export async function getNews(orgIds: string[], limit = 10): Promise<NewsPost[]>
     authorName: n.profiles?.display_name ?? "",
   }));
 }
+
+/** One member of the organization for the admin's teacher page, or null. */
+export async function getMemberDetail(orgId: string, userId: string) {
+  const supabase = await createClient();
+  const [memberships, profile, classes, direct] = await Promise.all([
+    supabase
+      .from("organization_memberships")
+      .select("role")
+      .eq("organization_id", orgId)
+      .eq("user_id", userId)
+      .eq("status", "active"),
+    supabase.from("profiles").select("display_name, profile_contacts(phone)").eq("id", userId).maybeSingle(),
+    supabase
+      .from("class_teachers")
+      .select("classes(id, name, status)")
+      .eq("organization_id", orgId)
+      .eq("teacher_user_id", userId),
+    supabase
+      .from("teacher_student_assignments")
+      .select("students(id, display_name, status)")
+      .eq("organization_id", orgId)
+      .eq("teacher_user_id", userId)
+      .eq("status", "active"),
+  ]);
+  if (memberships.error) throw memberships.error;
+  if (profile.error) throw profile.error;
+  if (classes.error) throw classes.error;
+  if (direct.error) throw direct.error;
+  if (memberships.data.length === 0 || !profile.data) return null;
+  const roles = memberships.data.map((m) => m.role);
+  return {
+    id: userId,
+    name: profile.data.display_name,
+    phone: profile.data.profile_contacts?.phone ?? null,
+    isAdmin: roles.includes("admin"),
+    isTeacher: roles.includes("teacher"),
+    classes: classes.data
+      .flatMap((c) =>
+        c.classes && c.classes.status === "active" ? [{ id: c.classes.id, name: c.classes.name }] : [],
+      )
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    students: direct.data
+      .flatMap((d) =>
+        d.students && d.students.status === "active"
+          ? [{ id: d.students.id, name: d.students.display_name }]
+          : [],
+      )
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  };
+}

@@ -287,6 +287,11 @@ test("an admin moves between the dashboard, classes, teachers and students", asy
   await shortcuts.getByRole("link", { name: "إضافة طالب" }).click();
   await expect(page.getByLabel("اسم الطالب")).toBeVisible();
   await page.goBack();
+  // "Invite a teacher" opens the Teachers page at the invite box.
+  await shortcuts.getByRole("link", { name: "دعوة معلم" }).click();
+  await expect(page).toHaveURL(/\/teachers\?invite=1/);
+  await expect(page.getByRole("button", { name: "دعوة معلم" })).toBeVisible();
+  await page.goBack();
   await expect(page.getByRole("heading", { name: "أخبار الجهة" })).toBeVisible();
   await expect(page.getByText(/صفحات حُفظت في/)).toBeVisible();
   await expect(page.getByRole("heading", { name: /حلقات اليوم/ })).toBeVisible();
@@ -527,6 +532,29 @@ test("an invited teacher joins the organization even when the email is confirmed
   await laptop.goto(
     "/ar/o/d1000000-0000-0000-0000-000000000001/students/d3000000-0000-0000-0000-000000000001",
   );
+  await expect(laptop.getByText("غير موجود، أو ليست لديك صلاحية.")).toBeVisible();
+
+  // The teacher's own page: assign a class and a student, make admin and back.
+  await page.goto("/ar/o/d1000000-0000-0000-0000-000000000001/teachers");
+  await page.getByRole("link", { name: teacherName }).click();
+  await expect(page.getByRole("heading", { level: 1, name: teacherName })).toBeVisible();
+  await page.getByLabel("إضافة إلى حلقة").selectOption({ label: "حلقة أ" });
+  await page.getByLabel("إضافة إلى حلقة").locator("xpath=ancestor::form").getByRole("button").click();
+  await expect(page.getByRole("link", { name: "حلقة أ" })).toBeVisible();
+  await page.getByLabel("إسناد طالب").selectOption({ label: "يوسف" });
+  await page.getByLabel("إسناد طالب").locator("xpath=ancestor::form").getByRole("button").click();
+  await expect(page.getByRole("link", { name: "يوسف" })).toBeVisible();
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "جعله مشرفًا" }).click();
+  await expect(page.getByRole("button", { name: "إلغاء الإشراف" })).toBeVisible();
+  await page.getByRole("button", { name: "إلغاء الإشراف" }).click();
+  await expect(page.getByRole("button", { name: "جعله مشرفًا" })).toBeVisible();
+
+  // Removing them from the organization ends all their access.
+  await page.getByRole("button", { name: "إزالة من الجهة" }).click();
+  await expect(page).toHaveURL(/\/teachers$/);
+  await expect(page.getByRole("link", { name: teacherName })).toHaveCount(0);
+  await laptop.goto("/ar/o/d1000000-0000-0000-0000-000000000001");
   await expect(laptop.getByText("غير موجود، أو ليست لديك صلاحية.")).toBeVisible();
 });
 

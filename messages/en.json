@@ -54,7 +54,9 @@
     "same_password": "The new password must be different from your current password.",
     "weak_password": "This password is too easy to guess. Use a longer one with letters and numbers.",
     "duplicate_student": "A student with this name already exists. If it's the same student, pick them from “Student without a class”; if it's a different student, press “Add” again.",
-    "invalid_phone": "Start with + and the country code, like +1 604 555 0100"
+    "invalid_phone": "Start with + and the country code, like +1 604 555 0100",
+    "cannot_change_self": "You cannot change your own role or remove yourself.",
+    "last_admin": "At least one admin must remain."
   },
   "Auth": {
     "loginTitle": "Log in",
@@ -403,7 +405,8 @@
     "actionRecord": "Record a lesson",
     "actionAddStudent": "Add a student",
     "actionPostNews": "Post news",
-    "actionMyClasses": "My classes"
+    "actionMyClasses": "My classes",
+    "actionInviteTeacher": "Invite a teacher"
   },
   "Juz": {
     "label": "Juz {juz}"
@@ -421,5 +424,38 @@
     "delete": "Delete “{title}”",
     "confirmDelete": "Delete the news “{title}”?",
     "deleted": "News deleted"
+  },
+  "Teacher": {
+    "roleAdmin": "Admin",
+    "roleTeacher": "Teacher",
+    "classes": "Classes",
+    "noClasses": "Not teaching any class yet.",
+    "addClass": "Add to a class",
+    "chooseClass": "Choose a class",
+    "classAdded": "Added to the class",
+    "noOtherClasses": "Teaches every class.",
+    "notATeacher": "This member is an admin only, not a teacher.",
+    "removeFromClass": "Remove from {className}",
+    "confirmRemoveFromClass": "Remove {name} from {className}? They will no longer see its students.",
+    "removedFromClass": "Removed from the class",
+    "students": "Directly assigned students",
+    "studentsHint": "Students this teacher follows outside their classes.",
+    "noStudents": "No directly assigned students.",
+    "addStudent": "Assign a student",
+    "chooseStudent": "Choose a student",
+    "studentAssigned": "Student assigned",
+    "noOtherStudents": "No other students.",
+    "unassignStudent": "Unassign {name}",
+    "confirmUnassignStudent": "Unassign {student} from {teacher}?",
+    "studentUnassigned": "Student unassigned",
+    "makeAdmin": "Make admin",
+    "confirmMakeAdmin": "Make {name} an admin? They will be able to manage the whole organization.",
+    "madeAdmin": "Now an admin",
+    "removeAdmin": "Remove admin",
+    "confirmRemoveAdmin": "Remove {name} as admin? They stay a teacher if they are one.",
+    "adminRemoved": "Admin removed",
+    "remove": "Remove from the organization",
+    "confirmRemove": "Remove {name} from {org}? They will no longer see the organization or its students. Lessons they recorded are kept.",
+    "removeHint": "Removing ends all their access to the organization right away. You can invite them again later."
   }
 }

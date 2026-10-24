@@ -54,7 +54,9 @@
     "same_password": "يجب أن تختلف كلمة المرور الجديدة عن الحالية.",
     "weak_password": "كلمة المرور سهلة التخمين. استخدم كلمة أطول تحتوي على حروف وأرقام.",
     "duplicate_student": "يوجد طالب بهذا الاسم. إن كان هو نفسه فاختره من قائمة «طالب بدون حلقة»، وإن كان طالبًا آخر فاضغط «إضافة» مرة أخرى.",
-    "invalid_phone": "ابدأ بـ + ورمز الدولة، مثل ‎+1 604 555 0100"
+    "invalid_phone": "ابدأ بـ + ورمز الدولة، مثل ‎+1 604 555 0100",
+    "cannot_change_self": "لا يمكنك تغيير صلاحياتك أو إزالة نفسك.",
+    "last_admin": "يجب أن يبقى مشرف واحد على الأقل."
   },
   "Auth": {
     "loginTitle": "تسجيل الدخول",
@@ -403,7 +405,8 @@
     "actionRecord": "تسجيل درس",
     "actionAddStudent": "إضافة طالب",
     "actionPostNews": "نشر خبر",
-    "actionMyClasses": "حلقاتي"
+    "actionMyClasses": "حلقاتي",
+    "actionInviteTeacher": "دعوة معلم"
   },
   "Juz": {
     "label": "الجزء {juz}"
@@ -421,5 +424,38 @@
     "delete": "حذف «{title}»",
     "confirmDelete": "حذف خبر «{title}»؟",
     "deleted": "تم حذف الخبر"
+  },
+  "Teacher": {
+    "roleAdmin": "مشرف",
+    "roleTeacher": "معلم",
+    "classes": "الحلقات",
+    "noClasses": "لا يدرّس أي حلقة بعد.",
+    "addClass": "إضافة إلى حلقة",
+    "chooseClass": "اختر حلقة",
+    "classAdded": "تمت الإضافة إلى الحلقة",
+    "noOtherClasses": "يدرّس كل الحلقات.",
+    "notATeacher": "هذا العضو مشرف فقط، وليس معلمًا.",
+    "removeFromClass": "إخراج من {className}",
+    "confirmRemoveFromClass": "إخراج {name} من {className}؟ لن يرى طلابها بعد ذلك.",
+    "removedFromClass": "تم الإخراج من الحلقة",
+    "students": "طلاب مسندون مباشرة",
+    "studentsHint": "طلاب يتابعهم هذا المعلم خارج حلقاته.",
+    "noStudents": "لا طلاب مسندون مباشرة.",
+    "addStudent": "إسناد طالب",
+    "chooseStudent": "اختر طالبًا",
+    "studentAssigned": "تم إسناد الطالب",
+    "noOtherStudents": "لا طلاب آخرون.",
+    "unassignStudent": "إلغاء إسناد {name}",
+    "confirmUnassignStudent": "إلغاء إسناد {student} إلى {teacher}؟",
+    "studentUnassigned": "تم إلغاء الإسناد",
+    "makeAdmin": "جعله مشرفًا",
+    "confirmMakeAdmin": "جعل {name} مشرفًا؟ سيتمكن من إدارة الجهة بالكامل.",
+    "madeAdmin": "أصبح مشرفًا",
+    "removeAdmin": "إلغاء الإشراف",
+    "confirmRemoveAdmin": "إلغاء إشراف {name}؟ يبقى معلمًا إن كان معلمًا.",
+    "adminRemoved": "تم إلغاء الإشراف",
+    "remove": "إزالة من الجهة",
+    "confirmRemove": "إزالة {name} من {org}؟ لن يتمكن من رؤية الجهة أو طلابها بعد ذلك. تبقى الدروس التي سجّلها.",
+    "removeHint": "الإزالة تُنهي كل صلاحياته في الجهة فورًا. يمكن دعوته من جديد لاحقًا."
   }
 }

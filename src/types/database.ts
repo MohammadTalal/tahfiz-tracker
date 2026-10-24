@@ -543,8 +543,14 @@ isOneToOne: false
 "record_lesson":
 { Args: { "p_accuracy_score"?: number,"p_completes_assignment_id"?: string,"p_end_ayah": number,"p_end_surah": number,"p_idempotency_key": string,"p_lesson_date": string,"p_mistake_categories"?: (string)[],"p_next_memorization"?: Json,"p_next_revisions"?: Json,"p_parent_visible_feedback"?: string,"p_performance_rating": Database["public"]['Enums']["performance_rating"],"p_private_note"?: string,"p_start_ayah": number,"p_start_surah": number,"p_student_id": string }; Returns: string
                            },
+"remove_member":
+{ Args: { "p_organization_id": string,"p_user_id": string }; Returns: undefined
+                           },
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
+                           },
+"set_member_admin":
+{ Args: { "p_admin": boolean,"p_organization_id": string,"p_user_id": string }; Returns: undefined
                            },
 "student_juz_progress":
 { Args: { "p_student_ids": (string)[] }; Returns: {
